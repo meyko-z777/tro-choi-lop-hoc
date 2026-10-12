@@ -1,6 +1,6 @@
 # 🎮 Trò chơi lớp học - Ôn bài cũ
 
-Sinh viên quét mã QR là chơi, không cần tài khoản. Màn hình hội trường hiện bảng vàng nhảy hạng trực tiếp và "Ô chữ bí ẩn" GIÁO DỤC CHÍNH TRỊ.
+Sinh viên quét mã QR là chơi, không cần tài khoản. Điện thoại báo "✓ Máy chủ đã nhận" sau mỗi lần trả lời. Màn hình hội trường hiện bảng vàng nhảy hạng trực tiếp và "Ô chữ bí ẩn" GIÁO DỤC CHÍNH TRỊ.
 
 ## 🔗 Các đường link (sau khi bật GitHub Pages)
 
@@ -18,8 +18,8 @@ Sinh viên quét mã QR là chơi, không cần tài khoản. Màn hình hội t
 
 ## ▶ Mở trò chơi khi đứng lớp
 
-1. Mở link **Màn hình lớn**, đăng nhập Google, bấm **F11** để toàn màn hình.
+1. Mở link **Màn hình lớn**, nhập **mã PIN** giảng viên (máy này chỉ cần nhập 1 lần), bấm **F11** để toàn màn hình.
 2. Cho sinh viên quét QR (nhắc dùng 4G/5G).
 3. Đủ người thì bấm **Bắt đầu**. Hết mỗi câu, bấm **Câu tiếp** (hoặc phím Space).
-4. Sau câu cuối, bấm **Tổng kết** để lật bức tranh và vinh danh Top 3.
+4. Sau câu cuối, bấm **Tổng kết** để lật ô chữ và vinh danh Top 3.
 5. Lớp khác hoặc ván khác: bấm **Ván mới** để có mã phòng mới.

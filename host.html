@@ -154,7 +154,7 @@ body{font-family:'Be Vietnam Pro',Inter,'Segoe UI',Roboto,Arial,sans-serif;color
   </section>
   <div id="err"></div>
 </div>
-<div id="login"><div class="card"><h2>Đăng nhập giảng viên</h2><p>Chỉ tài khoản Google của giảng viên (đã khai báo trong Firebase) mới điều khiển được trò chơi. Sinh viên không cần đăng nhập.</p><br><button class="btn" id="loginBtn">Đăng nhập Google</button><p id="loginErr" style="color:#E04A3A;margin-top:14px"></p></div></div>
+<div id="login"><div class="card"><h2>🔐 Mã PIN giảng viên</h2><p>Nhập mã PIN để điều khiển trò chơi. Máy này chỉ cần nhập một lần.<br>Sinh viên không cần đăng nhập.</p><br><input id="pin" type="password" inputmode="numeric" autocomplete="off" maxlength="12" style="font:inherit;font-size:44px;font-weight:900;text-align:center;letter-spacing:.3em;width:340px;padding:12px;border-radius:20px;border:3px solid #F0DCC8"><br><br><button class="btn" id="loginBtn">Vào điều khiển ▶</button><p id="loginErr" style="color:#E04A3A;margin-top:14px"></p></div></div>
 
 <script type="module">
 import { makeNet, DEMO, EMU } from './net.js';
@@ -319,11 +319,13 @@ function loop() {
     $('tArc').style.stroke = left < 5000 ? '#E04A3A' : '#D7261E';
     if (s !== lastTick && s <= 5 && s > 0) { lastTick = s; SFX.tick(); }
     const everyone = stats && stats.q === game.q && stats.total > 0 && stats.nAns >= stats.total && now() - game.qStartMs > 3000;
-    if (left <= 0 && now() > game.qStartMs + L * 1000 + 900) doReveal();
+    // hết giờ: chờ thêm phần trễ cho phép + 1,5 giây để đáp án đang trên đường kịp về rồi mới công bố
+    if (left <= 0 && now() > game.qStartMs + L * 1000 + GRACE_MS + 1500) doReveal();
     else if (everyone && !allAnsweredAt) allAnsweredAt = Date.now();
     if (allAnsweredAt && Date.now() - allAnsweredAt > 1200) doReveal();
   }
   if (dirty) { dirty = false; refresh(); }
+  if (lateFix) republish();
 }
 let allAnsweredAt = 0, refreshAt = 0;
 function refresh() {
@@ -351,14 +353,26 @@ async function startQuestion(qi) {
       qStart: 'SERVER', starts: { [qi]: 'SERVER' }, results: null, reveal: null });
   } catch (e) { err(e); } finally { busy = false; }
 }
-let revealing = false;
+let revealing = false, lateFix = false, lastPub = 0;
 async function doReveal() {
   if (revealing || game.state !== 'question') return; revealing = true;
   try {
     const c = compute(), rate = c.total ? c.nRight / c.total : 0;
     const add = Math.min(TOTAL_TILES - (game.tiles || 0), tilesFor(rate));
     const results = {}; c.list.forEach(p => results[p.uid] = [p.score, p.rank, p.last, p.streak, p.gained]);
+    lateFix = false; lastPub = Date.now();
     await net.setGame(g, { state: 'reveal', revealAt: Date.now(), reveal: { key: KEYS[game.q], counts: c.counts.slice(0, QUESTIONS[game.q].options.length), rate, add }, results, tiles: (game.tiles || 0) + add, total: c.total });
+  } catch (e) { err(e); } finally { revealing = false; }
+}
+// Đáp án hợp lệ (gửi trong giờ) nhưng tới màn hình lớn sau lúc công bố: tính lại và gửi bảng điểm mới (không đổi số chữ đã lật)
+async function republish() {
+  if (revealing || !lateFix || Date.now() - lastPub < 1500 || (game.state !== 'reveal' && game.state !== 'end')) return;
+  revealing = true; lateFix = false; lastPub = Date.now();
+  try {
+    const c = compute(), results = {}; c.list.forEach(p => results[p.uid] = [p.score, p.rank, p.last, p.streak, p.gained]);
+    const d = { results, total: c.total };
+    if (game.state === 'reveal') d.reveal = { ...game.reveal, counts: c.counts.slice(0, QUESTIONS[game.q].options.length), rate: c.total ? c.nRight / c.total : 0 };
+    await net.setGame(g, d);
   } catch (e) { err(e); } finally { revealing = false; }
 }
 async function finish() {
@@ -376,8 +390,16 @@ $('newBtn').onclick = () => { if (confirm('Tạo phòng mới? Sinh viên sẽ p
 
 /* ---------- khi trạng thái ván thay đổi ---------- */
 let lastState = '', lastQ = -2;
+// Nghe đáp án theo từng câu: giữ câu hiện tại và câu liền trước (đón đáp án tới muộn), bỏ các câu cũ hơn
+const ansSubs = new Map();
+function listenAnswers(q) {
+  if (q < 0 || ansSubs.has(q)) return;
+  ansSubs.set(q, net.onAnswersQ(g, q, onAnswers));
+  for (const [k, un] of ansSubs) if (k < q - 1) { un(); ansSubs.delete(k); }
+}
 function onGame(d, pending) {
   if (!d) return;
+  if (d.state === 'question' || d.state === 'reveal' || d.state === 'end') listenAnswers(d.q);
   if (d.state === 'question' && !pending && d.qStartMs && sentAt) { hostOffset = d.qStartMs - (sentAt + Date.now()) / 2; sentAt = 0; }
   game = d;
   const key = d.state + ':' + d.q;
@@ -401,16 +423,26 @@ function showFinal() {
 }
 
 /* ---------- người chơi vào lớp ---------- */
-let rosterTimer = null;
+// Cấp số: bạn nào đã có số (tải lại màn hình lớn) thì giữ nguyên; bạn mới nhận số kế tiếp. Ghi gộp mỗi 0,5 giây.
+let assignTimer = null, toAssign = [];
 function onPlayers(list) {
   list.sort((a, b) => a.t - b.t || (a.uid < b.uid ? -1 : 1));
   const fresh = [];
-  for (const p of list) if (!roster[p.uid]) { roster[p.uid] = nextN++; fresh.push(p.uid); }
-  if (!fresh.length) return;
+  for (const p of list) if (!roster[p.uid]) { roster[p.uid] = nextN++; fresh.push(p.uid); toAssign.push([p.uid, roster[p.uid]]); }
+  if (!fresh.length) { dirty = true; return; }
   addChips(fresh); dirty = true;
-  if (!rosterTimer) rosterTimer = setTimeout(() => { rosterTimer = null; net.setRoster(g, roster).catch(err); }, DEMO ? 50 : 1000);
+  if (!assignTimer) assignTimer = setTimeout(flushAssign, DEMO ? 30 : 500);
 }
-function onAnswers(list) { for (const a of list) if (!answers.has(a.q + '_' + a.uid)) answers.set(a.q + '_' + a.uid, a); dirty = true; }
+async function flushAssign() {
+  const batch = toAssign; toAssign = [];
+  try { await net.assign(g, batch); assignTimer = null; }
+  catch (e) { err(e); toAssign = batch.concat(toAssign); assignTimer = setTimeout(flushAssign, 1500); return; }
+  if (toAssign.length) assignTimer = setTimeout(flushAssign, 300);
+}
+function onAnswers(list) {
+  for (const a of list) if (!answers.has(a.q + '_' + a.uid)) { answers.set(a.q + '_' + a.uid, a); if (game && game.state !== 'question' && game.state !== 'lobby' && a.q <= game.q) lateFix = true; }
+  dirty = true;
+}
 
 /* ---------- máy ảo (chế độ thử) ---------- */
 function addBots(k) {
@@ -431,12 +463,9 @@ function botsAnswer(qi) {
 }
 
 const VI_ERR = {
-  'auth/operation-not-allowed': 'Firebase chưa bật đăng nhập Google. Vào Firebase Console > Authentication > Sign-in method, bật Google.',
-  'auth/unauthorized-domain': 'Tên miền chưa được cho phép. Vào Authentication > Settings > Authorized domains, thêm meyko-z777.github.io.',
-  'auth/popup-blocked': 'Trình duyệt chặn cửa sổ đăng nhập. Cho phép cửa sổ bật lên (pop-up) cho trang này rồi bấm lại.',
-  'auth/popup-closed-by-user': 'Cửa sổ đăng nhập bị đóng. Bấm lại nút Đăng nhập Google.',
+  'auth/operation-not-allowed': 'Firebase chưa bật đăng nhập ẩn danh (Anonymous). Vào Firebase Console, ô Search gõ Authentication > Sign-in method, bật Anonymous.',
   'auth/network-request-failed': 'Mất kết nối mạng. Kiểm tra wifi/4G rồi thử lại.',
-  'permission-denied': 'Tài khoản Google này không phải Gmail giảng viên đã ghi trong luật Firestore. Đăng xuất và đăng nhập đúng Gmail.',
+  'permission-denied': 'Máy chủ từ chối. Có thể luật Firestore chưa được cập nhật bản mới (xem HUONG-DAN-CAI-DAT.md).',
 };
 const viErr = e => VI_ERR[e?.code] || (e?.message || String(e));
 function err(e) { console.error(e); $('err').textContent = '⚠ ' + viErr(e); setTimeout(() => $('err').textContent = '', 12000); }
@@ -447,8 +476,10 @@ async function boot() {
   net = await makeNet();
   $('mode').textContent = DEMO ? 'CHẾ ĐỘ THỬ (1 máy)' : EMU ? 'GIẢ LẬP FIREBASE' : '● TRỰC TUYẾN';
   $('mode').classList.toggle('live', !DEMO);
-  const user = await net.signInHost(false);
-  if (!user) { $('login').style.display = 'flex'; await new Promise(res => { $('loginBtn').onclick = async () => { try { await net.signInHost(true); $('login').style.display = 'none'; res(); } catch (e) { $('loginErr').textContent = 'Không đăng nhập được: ' + viErr(e); } }; }); }
+  const ok = await net.signInHost();
+  if (!ok) { $('login').style.display = 'flex'; $('pin').focus();
+    await new Promise(res => { const go = async () => { $('loginErr').textContent = ''; try { await net.unlock($('pin').value.trim()); $('login').style.display = 'none'; res(); } catch (e) { $('loginErr').textContent = e?.code === 'permission-denied' ? 'Sai mã PIN. Thử lại nhé.' : 'Không vào được: ' + viErr(e); } };
+      $('loginBtn').onclick = go; $('pin').onkeydown = e => { if (e.key === 'Enter') go(); }; }); }
   const P = new URLSearchParams(location.search);
   g = P.get('g') || localStorage.getItem('gdct-host-g') || newCode();
   localStorage.setItem('gdct-host-g', g);
@@ -460,7 +491,6 @@ async function boot() {
   for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) if (qr.isDark(r, c)) cx.fillRect(Math.floor((c + m) * s), Math.floor((r + m) * s), Math.ceil(s), Math.ceil(s));
   $('joinUrl').textContent = join.href.replace(/^https?:\/\//, '');
 
-  roster = await net.getRoster(g); nextN = Math.max(0, ...Object.values(roster)) + 1;
   let first = true;
   net.onGameHost(g, (d, pending) => {
     if (first) { first = false; if (!d) { net.setGame(g, { state: 'lobby', q: -1, title: TITLE, nq: NQ, tiles: 0, starts: {}, results: null, reveal: null, question: null }, false).catch(err); return; } }
@@ -470,8 +500,9 @@ async function boot() {
     $('demoBar').innerHTML = 'Máy ảo: <button class="btn ghost" data-k="10">+10</button><button class="btn ghost" data-k="100">+100</button><button class="btn ghost" data-k="377">+377</button>';
     $('demoBar').onclick = e => { const k = +e.target.dataset.k; if (k) addBots(k); };
   }
+  roster = await net.getNums(g); nextN = Math.max(0, ...Object.values(roster)) + 1;
+  onAnswers(await net.getAllAnswers(g));
   net.onPlayers(g, onPlayers);
-  net.onAnswers(g, onAnswers);
   loop();
 }
 boot().catch(err);

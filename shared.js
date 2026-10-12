@@ -9,7 +9,7 @@ export const pad = n => String(n).padStart(3, '0');
 export const WORD = 'GIÁO DỤC CHÍNH TRỊ';
 export const LETTERS_IN_WORD = [...WORD].filter(c => c !== ' ').length;
 export const TOTAL_TILES = LETTERS_IN_WORD;
-export const GRACE_MS = 1500;           // chấp nhận trễ mạng sau khi hết giờ
+export const GRACE_MS = 2500;           // chấp nhận trễ mạng sau khi hết giờ (điện thoại mạng yếu nhận câu hỏi chậm vài giây)
 // Mỗi câu lật 2 chữ; từ 60% cả lớp trả lời đúng thì lật 3 chữ
 export function tilesFor(rate) { return rate >= 0.6 ? 3 : 2; }
 

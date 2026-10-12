@@ -1,36 +1,39 @@
 rules_version = '2';
-// Luật bảo vệ dữ liệu trò chơi. Thay EMAIL_GIANG_VIEN bằng địa chỉ Gmail của giảng viên.
+// Luật bảo vệ dữ liệu trò chơi (bản dùng MÃ PIN, không cần Google).
+// PIN_HASH: mã băm SHA-256 của chuỗi 'gdct-tay-do:' + mã PIN. Claude gửi riêng mã này cho giảng viên, KHÔNG ghi vào kho công khai.
 service cloud.firestore {
   match /databases/{db}/documents {
+    // Giảng viên = máy đã nhập đúng PIN (có "chìa khóa" trong hostKeys)
     function isHost() {
-      return request.auth != null && request.auth.token.email == 'EMAIL_GIANG_VIEN'
-        && request.auth.token.email_verified == true;
+      return request.auth != null && exists(/databases/$(db)/documents/hostKeys/$(request.auth.uid));
+    }
+    match /hostKeys/{uid} {
+      allow get: if request.auth != null && request.auth.uid == uid;
+      allow create: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['pin'])
+        && request.resource.data.pin is string
+        && hashing.sha256('gdct-tay-do:' + request.resource.data.pin).toHexString().lower() == 'PIN_HASH';
     }
     match /games/{g} {
-      allow read: if true;                       // ai cũng xem được trạng thái ván (câu hỏi, kết quả)
+      allow read: if true;                        // ai cũng xem được trạng thái ván (câu hỏi, kết quả)
       allow write: if isHost();
-
-      match /pub/{d} {                           // bảng số thứ tự
-        allow read: if true;
-        allow write: if isHost();
-      }
-      match /players/{uid} {                     // sinh viên báo "em vào rồi"
-        allow read: if isHost() || (request.auth != null && request.auth.uid == uid);
+      match /players/{uid} {                      // sinh viên báo danh
+        allow read, delete: if isHost();
         allow create: if request.auth != null && request.auth.uid == uid
           && request.resource.data.keys().hasOnly(['t']) && request.resource.data.t == request.time;
-        allow delete: if isHost();
       }
-      match /answers/{id} {                      // mỗi sinh viên chỉ được nộp 1 lần mỗi câu, và chỉ trong giờ
+      match /nums/{uid} {                         // số thứ tự do màn hình lớn cấp
+        allow get: if request.auth != null && request.auth.uid == uid;
+        allow read, write: if isHost();
+      }
+      match /answers/{id} {                       // mỗi sinh viên nộp 1 lần mỗi câu; giờ nộp do máy chủ đóng dấu
         allow read, delete: if isHost();
         allow create: if request.auth != null
           && id == string(request.resource.data.q) + '_' + request.auth.uid
           && request.resource.data.keys().hasOnly(['q', 'a', 't'])
-          && request.resource.data.t == request.time
-          && request.resource.data.a is list && request.resource.data.a.size() <= 6
-          && get(/databases/$(db)/documents/games/$(g)).data.state == 'question'
-          && get(/databases/$(db)/documents/games/$(g)).data.q == request.resource.data.q
-          && request.time <= get(/databases/$(db)/documents/games/$(g)).data.qStart
-               + duration.value(get(/databases/$(db)/documents/games/$(g)).data.limit + 2, 's');
+          && request.resource.data.q is int && request.resource.data.a is int
+          && request.resource.data.a >= 0 && request.resource.data.a < 6
+          && request.resource.data.t == request.time;
       }
     }
   }

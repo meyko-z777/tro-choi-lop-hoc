@@ -40,63 +40,91 @@ input{font:inherit;font-size:34px;font-weight:900;text-align:center;letter-spaci
 .err{color:var(--no);font-weight:700}
 .card-pick{width:100%;max-width:420px;background:#fff;border:2px solid var(--line);border-radius:22px;padding:20px 18px;display:flex;flex-direction:column;gap:12px;align-items:center}
 .card-pick input{width:100%}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:#FFCD00;margin-right:6px}
+.dot.live{background:#3BD16F}
+#conn{font-size:12px;font-weight:700;opacity:.85;display:flex;align-items:center}
+.rcpt{display:inline-flex;align-items:center;gap:8px;font-weight:900;font-size:20px;padding:10px 18px;border-radius:30px;background:#fff;border:2px solid var(--line)}
+.rcpt.ok{color:var(--green);border-color:var(--green)}
+.rcpt.warn{color:#C77700;border-color:#F2B705}
+.rcpt.bad{color:var(--no);border-color:var(--no)}
+#cardBtn{font:inherit;font-weight:800;font-size:14px;color:var(--mute);background:none;border:0;text-decoration:underline;padding:10px;align-self:center}
+#cards{position:fixed;inset:0;z-index:9;display:none;flex-direction:column;background:#2B1D1D}
+#cards.on{display:flex}
+#cards .grid{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:8px}
+#cards .grid button{border:0;border-radius:18px;font:inherit;font-weight:900;font-size:64px;color:#fff}
+#cards .full{position:fixed;inset:0;display:none;align-items:center;justify-content:center;font-size:40vw;font-weight:900;color:#fff}
+#cards .close{font:inherit;font-weight:800;font-size:18px;padding:16px;border:0;background:#fff;color:var(--ink)}
 input::placeholder{letter-spacing:.05em;color:#CDB9A6;font-weight:700}
 </style></head>
 <body>
-<header id="hd" style="display:none"><span id="hAv" class="av"></span><span class="id" id="hId"></span><span class="sp"></span><span class="sc" id="hSc"></span></header>
+<header id="hd" style="display:none"><span id="hAv" class="av"></span><span class="id" id="hId"></span><span class="sp"></span><span id="conn"></span><span class="sc" id="hSc" style="margin-left:10px"></span></header>
 <main id="app"><div class="center"><div class="big">Đang vào lớp…</div><div class="mute">Chờ một chút nhé</div></div></main>
+<button id="cardBtn" style="display:none">📶 Mạng yếu quá? Dùng THẺ MÀU giơ lên</button>
+<div id="cards"><div class="grid">
+  <button data-c="#E5251B">A</button><button data-c="#2F7BEA">B</button><button data-c="#D9A400">C</button><button data-c="#2EAD5B">D</button>
+  <button data-c="#2EAD5B" style="font-size:40px">ĐÚNG</button><button data-c="#E04A3A" style="font-size:40px">SAI</button></div>
+  <button class="close" id="cardsClose">✕ Quay lại trò chơi</button><div class="full" id="cardFull"></div></div>
 <script type="module">
-import { makeNet, DEMO } from './net.js';
-import { avatar, pad, LETTERS, OPT_COLORS } from './shared.js';
+import { makePhone, DEMO } from './phone-net.js';
+import { avatar, pad, LETTERS, OPT_COLORS, GRACE_MS } from './shared.js';
 
 const $ = id => document.getElementById(id), app = $('app');
 const P = new URLSearchParams(location.search);
-let g = P.get('g'), net, uid, myN = null, game = null, lastKey = '', timerRAF = 0, joined = false;
-const seenAt = {};   // câu hỏi -> thời điểm điện thoại nhận được (tự đếm giờ, không phụ thuộc đồng hồ máy)
+let g = P.get('g'), net, uid, myN = null, game = null, lastKey = '', timerRAF = 0;
+const seenAt = {};      // câu hỏi -> lúc điện thoại nhận được (tự đếm giờ bằng đồng hồ trong máy)
+const sent = {};        // câu hỏi -> { a, st: 'sending'|'retry'|'ok'|'denied'|'late' }
 
 function screen(html) { app.innerHTML = html; }
 function err(msg) { screen(`<div class="center"><div class="big">😵 Có lỗi kết nối</div><div class="mute">${msg}</div><button class="send" onclick="location.reload()">Thử lại</button></div>`); }
-
-const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
-const answered = q => store.get(`gdct-a-${g}-${uid}-${q}`);
 
 function header() {
   if (!myN) return; const a = avatar(myN);
   $('hd').style.display = 'flex'; $('hAv').style.background = a.c; $('hAv').textContent = a.e; $('hId').textContent = pad(myN);
   const r = game?.results?.[uid]; $('hSc').textContent = r ? r[0] + ' điểm' : '';
 }
+function showMode(m) { $('conn').innerHTML = `<span class="dot ${m === 'trực tiếp' || m === 'thử' ? 'live' : ''}"></span>${m}`; }
 
 function render() {
   cancelAnimationFrame(timerRAF);
   header();
+  $('cardBtn').style.display = myN ? 'block' : 'none';
   if (!game) return screen(`<div class="center"><div class="big">⏳ Phòng chưa mở</div><div class="mute">Thầy/cô sắp bắt đầu, giữ nguyên trang này nhé.</div></div>`);
   const s = game.state;
-  if (!myN && s === 'lobby') return screen(`<div class="center"><div class="res">✅</div><div class="big">Đã vào lớp!</div><div class="mute">Số thứ tự và linh vật của bạn sẽ hiện ra trong giây lát.<br>Nhìn lên màn hình lớn, chờ thầy/cô bắt đầu nhé!</div></div>`);
-  if (s === 'lobby') { const a = avatar(myN); return screen(`<div class="center"><div class="mute">Bạn là</div><div class="av me" style="background:${a.c}">${a.e}</div><div class="num">${pad(myN)}</div><div class="big" style="font-size:22px">Nhìn lên màn hình lớn 👀</div><div class="mute">Tìm linh vật của bạn trên màn hình.<br>Chờ thầy/cô bấm bắt đầu nhé!</div></div>`); }
+  if (!myN && (s === 'lobby' || s === 'question' || s === 'reveal')) return screen(`<div class="center"><div class="res">✅</div><div class="big">Đã vào lớp!</div><div class="mute">Số thứ tự và linh vật của bạn sẽ hiện ra trong giây lát.<br>Nhìn lên màn hình lớn nhé!</div></div>`);
+  if (s === 'lobby') { const a = avatar(myN); return screen(`<div class="center"><div class="mute">Bạn là</div><div class="av me" style="background:${a.c}">${a.e}</div><div class="num">${pad(myN)}</div><div class="big" style="font-size:22px">Nhìn lên màn hình lớn 👀</div><div class="mute">Tìm linh vật của bạn trên màn hình.<br>Chờ thầy/cô bấm bắt đầu nhé!<br><b>Đừng tải lại trang.</b></div></div>`); }
   if (s === 'question') return renderQ();
   if (s === 'reveal' || s === 'end') return renderResult(s === 'end');
 }
 
+const RCPT = {
+  sending: ['warn', '📡 Đang gửi đáp án…'],
+  retry: ['warn', '📶 Mạng yếu, đang gửi lại…'],
+  ok: ['ok', '✓ Máy chủ đã nhận đáp án'],
+  denied: ['bad', '⚠ Máy chủ từ chối, báo thầy/cô nhé'],
+  late: ['bad', '⌛ Gửi không kịp giờ'],
+};
+function renderSent(q) {
+  const x = sent[q], Qd = game.question, [cls, txt] = RCPT[x.st];
+  const opt = Qd ? Qd.options[x.a] : '';
+  screen(`<div class="center"><div class="res">${x.st === 'ok' ? '✅' : x.st === 'late' || x.st === 'denied' ? '⚠️' : '✍️'}</div>
+    <div class="big">Bạn chọn: ${Qd?.type === 'tf' ? opt : LETTERS[x.a] + '. ' + opt}</div>
+    <div class="rcpt ${cls}">${txt}</div>
+    <div class="mute">Chờ cả lớp trả lời xong…<br>Kết quả sẽ hiện ngay tại đây.</div></div>`);
+}
+
 function renderQ() {
   const q = game.q, Qd = game.question; if (!Qd) return;
-  if (answered(q)) return screen(`<div class="center"><div class="res">✍️</div><div class="big">Đã chốt đáp án!</div><div class="mute">Chờ cả lớp trả lời xong…<br>Kết quả sẽ hiện ngay tại đây.</div></div>`);
-  const tf = Qd.type === 'tf', multi = Qd.type === 'multi';
+  if (sent[q]) return renderSent(q);
+  const tf = Qd.type === 'tf';
   screen(`<div class="qmeta"><span>CÂU ${q + 1}/${game.nq}</span><span id="tl"></span></div><div class="tbar"><i id="tb"></i></div>
     <div class="qtext">${Qd.text}</div>
     <div class="opts" style="${tf ? 'grid-template-columns:1fr 1fr' : ''}">${Qd.options.map((o, i) => tf
       ? `<button class="opt tf" data-i="${i}" style="background:${i ? '#E04A3A' : '#2EAD5B'}">${o}</button>`
-      : `<button class="opt" data-i="${i}"><span class="L" style="background:${OPT_COLORS[i]}">${LETTERS[i]}</span>${o}</button>`).join('')}</div>
-    ${multi ? '<div class="mute" style="text-align:center">Chạm để chọn nhiều đáp án, rồi bấm GỬI</div><button class="send" id="send" disabled>GỬI ĐÁP ÁN</button>' : ''}`);
-  const sel = new Set();
-  app.querySelectorAll('.opt').forEach(b => b.onclick = () => {
-    const i = +b.dataset.i;
-    if (!multi) return submit([i]);
-    sel.has(i) ? sel.delete(i) : sel.add(i); b.classList.toggle('sel'); $('send').disabled = !sel.size;
-  });
-  if (multi) $('send').onclick = () => submit([...sel].sort());
-  const L = Qd.limit * 1000, t0 = seenAt[q] ??= performance.now();
+      : `<button class="opt" data-i="${i}"><span class="L" style="background:${OPT_COLORS[i]}">${LETTERS[i]}</span>${o}</button>`).join('')}</div>`);
+  app.querySelectorAll('.opt').forEach(b => b.onclick = () => submit(+b.dataset.i));
+  const L = Qd.limit * 1000, t0 = seenAt[q] ??= Date.now();
   const tick = () => {
-    const left = Math.max(0, t0 + L - performance.now());
+    const left = Math.max(0, t0 + L - Date.now());
     if ($('tb')) { $('tb').style.width = (left / L * 100) + '%'; $('tl').textContent = Math.ceil(left / 1000) + ' giây'; }
     if (left <= 0) return screen(`<div class="center"><div class="res">⌛</div><div class="big">Hết giờ!</div><div class="mute">Chờ xem đáp án trên màn hình lớn nhé.</div></div>`);
     timerRAF = requestAnimationFrame(tick);
@@ -104,12 +132,13 @@ function renderQ() {
   tick();
 }
 
-async function submit(a) {
-  const q = game.q; store.set(`gdct-a-${g}-${uid}-${q}`, JSON.stringify(a));
+function submit(a) {
+  const q = game.q; if (sent[q]) return;
+  sent[q] = { a, st: 'sending' };
   if (navigator.vibrate) navigator.vibrate(30);
   render();
-  try { await net.answer(g, q, a); }
-  catch (e) { screen(`<div class="center"><div class="res">⌛</div><div class="big">Không kịp rồi!</div><div class="mute">Đáp án gửi sau khi hết giờ nên không được tính.</div></div>`); }
+  const deadline = (seenAt[q] ?? Date.now()) + game.question.limit * 1000 + GRACE_MS;
+  net.answer(q, a, deadline, st => { sent[q].st = st; if (game && game.state === 'question' && game.q === q) renderSent(q); });
 }
 
 function renderResult(end) {
@@ -120,9 +149,16 @@ function renderResult(end) {
   if (navigator.vibrate) navigator.vibrate(last === 1 ? [40, 60, 40] : 120);
   screen(`<div class="center">${last === 1 ? `<div class="res">✅</div><div class="big ok">Chính xác!</div><div class="pts">+${gained}</div>${streak >= 2 ? `<div class="big" style="font-size:22px">🔥 Chuỗi ${streak} câu đúng!</div>` : ''}`
     : last === 0 ? `<div class="res">❌</div><div class="big bad">Chưa đúng rồi</div><div class="pts">+${gained}</div><div class="mute">Vẫn có điểm tham gia! Xem đáp án đúng trên màn hình lớn nhé.</div>`
-    : `<div class="res">⌛</div><div class="big">Bạn chưa trả lời câu này</div>`}
+    : `<div class="res">⌛</div><div class="big">Câu này chưa tính điểm cho bạn</div>${sent[game.q] ? '<div class="mute">Đáp án tới máy chủ sau khi hết giờ.</div>' : ''}`}
     <div class="rank">Hạng hiện tại: <b>${rank}</b>${total ? ' / ' + total : ''} · ${score} điểm</div></div>`);
 }
+
+/* ---- thẻ màu dự phòng (không cần mạng) ---- */
+$('cardBtn').onclick = () => $('cards').classList.add('on');
+$('cardsClose').onclick = () => $('cards').classList.remove('on');
+$('cards').querySelectorAll('.grid button').forEach(b => b.style.background = b.dataset.c);
+$('cards').querySelectorAll('.grid button').forEach(b => b.onclick = () => { const f = $('cardFull'); f.style.background = b.dataset.c; f.textContent = b.textContent; f.style.fontSize = b.textContent.length > 1 ? '22vw' : '40vw'; f.style.display = 'flex'; });
+$('cardFull').onclick = () => { $('cardFull').style.display = 'none'; };
 
 async function boot() {
   if (!g) {
@@ -136,19 +172,22 @@ async function boot() {
     await new Promise(res => $('go').onclick = () => { const v = $('code').value.trim(); if (/^\d{4}$/.test(v)) { g = v; history.replaceState(null, '', '?g=' + v + (DEMO ? '&demo=1' : '')); res(); } });
     screen(`<div class="center"><div class="big">Đang vào lớp…</div></div>`);
   }
-  net = await makeNet();
-  uid = await net.signInStudent();
-  const saved = store.get(`gdct-n-${g}-${uid}`); if (saved) myN = +saved;
-  net.join(g).then(() => { joined = true; }).catch(() => {});   // chạy ngầm, không bắt chờ
-  let unRoster = net.onRoster(g, m => {
-    if (m[uid]) { myN = m[uid]; store.set(`gdct-n-${g}-${uid}`, myN); if (net.kind === 'firebase' && unRoster) { unRoster(); unRoster = null; } render(); }
-  });
-  net.onGame(g, d => {
-    if (d && d.state === 'question' && seenAt[d.q] === undefined) seenAt[d.q] = performance.now();
+  net = makePhone(g);
+  net.onMode = showMode; showMode(net.mode);
+  uid = await net.signIn();
+  net.onState(d => {
+    if (d && d.state === 'question' && seenAt[d.q] === undefined) seenAt[d.q] = Date.now();
     const k = d ? [d.state, d.q, d.results && d.results[uid] ? d.results[uid].join() : '-'].join(':') : 'none';
     game = d;
     if (k !== lastKey) { lastKey = k; render(); }
   });
+  // hết giờ mà màn hình lớn vẫn chưa công bố -> hỏi lại máy chủ cho chắc (phòng kênh trực tiếp bị "đứng")
+  setInterval(() => {
+    if (game?.state === 'question' && seenAt[game.q] && Date.now() > seenAt[game.q] + game.question.limit * 1000 + 4000) net.wantPoll = () => true;
+  }, 3000);
+  net.watch();
+  await net.join();
+  net.waitNumber(n => { myN = n; render(); });
 }
 boot().catch(e => err(e.message || e));
 </script>
