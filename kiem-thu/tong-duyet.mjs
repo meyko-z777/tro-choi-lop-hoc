@@ -1,4 +1,4 @@
-// TỔNG DUYỆT: giả lập nhiều điện thoại sinh viên, đi ĐÚNG đường mà trang điện thoại dùng (HTTPS: đăng nhập ẩn danh,
+// TỔNG DUYỆT: giả lập nhiều điện thoại sinh viên, đi ĐÚNG đường mà trang điện thoại dùng (HTTPS, không tạo tài khoản,
 // báo danh, chờ số, gửi đáp án và chờ máy chủ xác nhận). Mở màn hình lớn ở nơi khác rồi chạy:
 //   node kiem-thu/tong-duyet.mjs <mã phòng> <số máy> [--emu]
 // Một bộ theo dõi chung đọc trạng thái ván 1 lần/giây cho tất cả máy ảo (đỡ tốn lượt đọc của gói miễn phí).
@@ -16,9 +16,9 @@ async function j(url, opt = {}) { const r = await fetch(url, { ...opt, signal: A
 const stat = { signin: 0, joined: 0, numbered: 0, nums: new Set(), sent: {}, ack: {}, denied: {}, retries: 0, late: {}, ackMs: [], errors: [] };
 let game = null;
 async function create(bot, path) {
-  const fields = path.includes('/answers/') ? { q: { integerValue: String(bot.q) }, a: { integerValue: String(bot.a) } } : {};
+  const fields = path.includes('/answers/') ? { q: { integerValue: String(bot.q) }, a: { integerValue: String(bot.a) }, p: { stringValue: bot.uid } } : {};
   const body = { writes: [{ update: { name: `${ROOT}/${path}`, fields }, currentDocument: { exists: false }, updateTransforms: [{ fieldPath: 't', setToServerValue: 'REQUEST_TIME' }] }] };
-  const r = await j(`${FS}:commit?key=${KEY}`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + bot.tok }, body: JSON.stringify(body) });
+  const r = await j(`${FS}:commit?key=${KEY}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
   if (r.ok) return 'ok';
   if (r.status === 409 || r.b?.error?.status === 'ALREADY_EXISTS' || r.b?.error?.status === 'FAILED_PRECONDITION') return 'dup';
   if (r.status === 403) return 'denied';
@@ -27,13 +27,13 @@ async function create(bot, path) {
 async function bot(i) {
   await sleep(Math.random() * 8000);                              // sinh viên quét QR rải rác
   const b = { i };
-  for (let k = 0; ; k++) { try { const r = await j(`${AUTH}/accounts:signUp?key=${KEY}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"returnSecureToken":true}' }); if (!r.ok) throw new Error(r.status); b.uid = r.b.localId; b.tok = r.b.idToken; break; } catch (e) { if (k > 6) { stat.errors.push('signin ' + e.message); return; } await sleep(1000); } }
+  b.uid = Array.from({ length: 20 }, () => 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'[Math.floor(Math.random() * 62)]).join('');
   stat.signin++;
   for (let k = 0; ; k++) { try { await create(b, `games/${G}/players/${b.uid}`); break; } catch (e) { stat.retries++; if (k > 10) { stat.errors.push('join'); return; } await sleep(800); } }
   stat.joined++;
   for (let k = 0; k < 60; k++) {
     await sleep(1500);
-    try { const r = await j(`${FS}/games/${G}/nums/${b.uid}?key=${KEY}`, { headers: { Authorization: 'Bearer ' + b.tok } }); const n = r.ok ? dec(r.b.fields?.n) : null; if (n) { b.n = n; stat.numbered++; stat.nums.add(n); break; } } catch (e) {}
+    try { const r = await j(`${FS}/games/${G}/nums/${b.uid}?key=${KEY}`); const n = r.ok ? dec(r.b.fields?.n) : null; if (n) { b.n = n; stat.numbered++; stat.nums.add(n); break; } } catch (e) {}
   }
   const done = new Set();
   while (!game || game.state !== 'end') {

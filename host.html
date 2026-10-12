@@ -359,7 +359,7 @@ async function doReveal() {
   try {
     const c = compute(), rate = c.total ? c.nRight / c.total : 0;
     const add = Math.min(TOTAL_TILES - (game.tiles || 0), tilesFor(rate));
-    const results = {}; c.list.forEach(p => results[p.uid] = [p.score, p.rank, p.last, p.streak, p.gained]);
+    const results = {}; c.list.forEach(p => results[p.n] = [p.score, p.rank, p.last, p.streak, p.gained]);
     lateFix = false; lastPub = Date.now();
     await net.setGame(g, { state: 'reveal', revealAt: Date.now(), reveal: { key: KEYS[game.q], counts: c.counts.slice(0, QUESTIONS[game.q].options.length), rate, add }, results, tiles: (game.tiles || 0) + add, total: c.total });
   } catch (e) { err(e); } finally { revealing = false; }
@@ -369,14 +369,14 @@ async function republish() {
   if (revealing || !lateFix || Date.now() - lastPub < 1500 || (game.state !== 'reveal' && game.state !== 'end')) return;
   revealing = true; lateFix = false; lastPub = Date.now();
   try {
-    const c = compute(), results = {}; c.list.forEach(p => results[p.uid] = [p.score, p.rank, p.last, p.streak, p.gained]);
+    const c = compute(), results = {}; c.list.forEach(p => results[p.n] = [p.score, p.rank, p.last, p.streak, p.gained]);
     const d = { results, total: c.total };
     if (game.state === 'reveal') d.reveal = { ...game.reveal, counts: c.counts.slice(0, QUESTIONS[game.q].options.length), rate: c.total ? c.nRight / c.total : 0 };
     await net.setGame(g, d);
   } catch (e) { err(e); } finally { revealing = false; }
 }
 async function finish() {
-  const c = compute(); const results = {}; c.list.forEach(p => results[p.uid] = [p.score, p.rank, p.last, p.streak, p.gained]);
+  const c = compute(); const results = {}; c.list.forEach(p => results[p.n] = [p.score, p.rank, p.last, p.streak, p.gained]);
   await net.setGame(g, { state: 'end', results, total: c.total }).catch(err);
 }
 function next() {

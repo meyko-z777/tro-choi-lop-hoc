@@ -17,20 +17,22 @@ service cloud.firestore {
     match /games/{g} {
       allow read: if true;                        // ai cũng xem được trạng thái ván (câu hỏi, kết quả)
       allow write: if isHost();
-      match /players/{uid} {                      // sinh viên báo danh
+      // Sinh viên KHÔNG đăng nhập (Firebase giới hạn số tài khoản tạo mới trên cùng mạng).
+      // Mỗi điện thoại tự sinh mã bí mật 20 ký tự (pid); bảng điểm công khai chỉ ghi theo SỐ THỨ TỰ, không lộ pid.
+      match /players/{pid} {                      // sinh viên báo danh
         allow read, delete: if isHost();
-        allow create: if request.auth != null && request.auth.uid == uid
+        allow create: if pid.matches('^[A-Za-z0-9]{20}$')
           && request.resource.data.keys().hasOnly(['t']) && request.resource.data.t == request.time;
       }
-      match /nums/{uid} {                         // số thứ tự do màn hình lớn cấp
-        allow get: if request.auth != null && request.auth.uid == uid;
-        allow read, write: if isHost();
+      match /nums/{pid} {                         // số thứ tự do màn hình lớn cấp (ai biết pid mới đọc được)
+        allow get: if true;
+        allow list, write: if isHost();
       }
-      match /answers/{id} {                       // mỗi sinh viên nộp 1 lần mỗi câu; giờ nộp do máy chủ đóng dấu
+      match /answers/{id} {                       // mỗi máy nộp 1 lần mỗi câu; giờ nộp do máy chủ đóng dấu
         allow read, delete: if isHost();
-        allow create: if request.auth != null
-          && id == string(request.resource.data.q) + '_' + request.auth.uid
-          && request.resource.data.keys().hasOnly(['q', 'a', 't'])
+        allow create: if request.resource.data.keys().hasOnly(['q', 'a', 'p', 't'])
+          && request.resource.data.p is string && request.resource.data.p.matches('^[A-Za-z0-9]{20}$')
+          && id == string(request.resource.data.q) + '_' + request.resource.data.p
           && request.resource.data.q is int && request.resource.data.a is int
           && request.resource.data.a >= 0 && request.resource.data.a < 6
           && request.resource.data.t == request.time;

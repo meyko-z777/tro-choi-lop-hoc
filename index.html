@@ -80,7 +80,7 @@ function err(msg) { screen(`<div class="center"><div class="big">😵 Có lỗi 
 function header() {
   if (!myN) return; const a = avatar(myN);
   $('hd').style.display = 'flex'; $('hAv').style.background = a.c; $('hAv').textContent = a.e; $('hId').textContent = pad(myN);
-  const r = game?.results?.[uid]; $('hSc').textContent = r ? r[0] + ' điểm' : '';
+  const r = game?.results?.[myN]; $('hSc').textContent = r ? r[0] + ' điểm' : '';
 }
 function showMode(m) { $('conn').innerHTML = `<span class="dot ${m === 'trực tiếp' || m === 'thử' ? 'live' : ''}"></span>${m}`; }
 
@@ -142,7 +142,7 @@ function submit(a) {
 }
 
 function renderResult(end) {
-  const r = game.results?.[uid];
+  const r = game.results?.[myN];
   if (!r) return screen(`<div class="center"><div class="big">${end ? '🏁 Kết thúc!' : '👀 Xem đáp án trên màn hình lớn'}</div><div class="mute">Bạn vào lớp sau câu này, câu tiếp theo chơi cùng nhé!</div></div>`);
   const [score, rank, last, streak, gained] = r, total = game.total || '';
   if (end) return screen(`<div class="center"><div class="res">${rank <= 3 ? ['🥇', '🥈', '🥉'][rank - 1] : '🎉'}</div><div class="big">Hạng ${rank}${total ? ' / ' + total : ''}</div><div class="pts">${score} điểm</div><div class="mute">Cảm ơn bạn đã chơi!<br>Nhìn lên màn hình lớn xem ô chữ bí ẩn nhé 🔠</div></div>`);
@@ -177,7 +177,7 @@ async function boot() {
   uid = await net.signIn();
   net.onState(d => {
     if (d && d.state === 'question' && seenAt[d.q] === undefined) seenAt[d.q] = Date.now();
-    const k = d ? [d.state, d.q, d.results && d.results[uid] ? d.results[uid].join() : '-'].join(':') : 'none';
+    const k = d ? [d.state, d.q, d.results && myN && d.results[myN] ? d.results[myN].join() : '-'].join(':') : 'none';
     game = d;
     if (k !== lastKey) { lastKey = k; render(); }
   });

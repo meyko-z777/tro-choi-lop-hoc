@@ -1,5 +1,5 @@
 // Kết nối của ĐIỆN THOẠI sinh viên - thiết kế "lì đòn":
-//  - Đăng nhập ẩn danh, báo danh, gửi đáp án: dùng HTTPS thường (fetch), chạy được cả trong trình duyệt của Zalo/Facebook.
+//  - Không tạo tài khoản; báo danh, gửi đáp án: dùng HTTPS thường (fetch), chạy được cả trong trình duyệt của Zalo/Facebook.
 //  - Mỗi lần gửi đáp án đều chờ máy chủ xác nhận; lỗi mạng thì tự gửi lại.
 //  - Nhận trạng thái ván chơi: kênh trực tiếp (Firestore) nếu được; kênh này kẹt/lỗi thì tự chuyển sang hỏi định kỳ.
 import { firebaseConfig } from './config.js';
@@ -8,8 +8,6 @@ const Q = new URLSearchParams(location.search);
 export const EMU = Q.has('emu');
 export const DEMO = !EMU && (Q.has('demo') || !firebaseConfig.projectId);
 const KEY = EMU ? 'demo-key' : firebaseConfig.apiKey, PROJECT = EMU ? 'demo-gdct' : firebaseConfig.projectId;
-const AUTH = EMU ? 'http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1' : 'https://identitytoolkit.googleapis.com/v1';
-const TOKEN = EMU ? 'http://127.0.0.1:9099/securetoken.googleapis.com/v1' : 'https://securetoken.googleapis.com/v1';
 const FS = (EMU ? 'http://127.0.0.1:8080' : 'https://firestore.googleapis.com') + `/v1/projects/${PROJECT}/databases/(default)/documents`;
 const DOCROOT = `projects/${PROJECT}/databases/(default)/documents`;
 
@@ -49,40 +47,25 @@ export class RestPhone {
   mode = 'đang nối';            // 'trực tiếp' | 'dự phòng'
   constructor(g) { this.g = g; this.rev = -1; this.subs = []; }
 
-  // Đăng nhập ẩn danh qua HTTPS. Giữ lại tài khoản trong máy (nếu trình duyệt cho phép) để tải lại trang không mất số.
+  // KHÔNG tạo tài khoản: Firebase chỉ cho ~100-150 tài khoản/giờ trên cùng địa chỉ mạng (cả lớp chung Wi-Fi/4G sẽ bị chặn).
+  // Mỗi máy tự sinh một mã bí mật ngẫu nhiên (chỉ máy đó và màn hình lớn biết), giữ lại nếu trình duyệt cho lưu.
   async signIn() {
-    const saved = JSON.parse(store.get('gdct-acc') || 'null');
-    if (saved && saved.refresh) {
-      try { await this.refresh(saved.refresh); if (this.uid === saved.uid) return this.uid; } catch (e) {}
+    let id = store.get('gdct-pid');
+    if (!id || !/^[A-Za-z0-9]{20}$/.test(id)) {
+      const A = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789', r = new Uint8Array(20);
+      crypto.getRandomValues(r); id = [...r].map(x => A[x % 62]).join(''); store.set('gdct-pid', id);
     }
-    for (let i = 0; ; i++) {
-      try {
-        const r = await fetchJSON(`${AUTH}/accounts:signUp?key=${KEY}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ returnSecureToken: true }) });
-        if (!r.ok) throw new Error('Đăng nhập lỗi ' + r.status + ' ' + (r.body?.error?.message || ''));
-        this.uid = r.body.localId; this.idToken = r.body.idToken; this.exp = Date.now() + (+r.body.expiresIn - 120) * 1000;
-        store.set('gdct-acc', JSON.stringify({ uid: this.uid, refresh: r.body.refreshToken }));
-        this.refreshToken = r.body.refreshToken;
-        return this.uid;
-      } catch (e) { if (i >= 5) throw e; await sleep(800 * (i + 1)); }
-    }
+    this.uid = id; return id;
   }
-  async refresh(rt) {
-    const r = await fetchJSON(`${TOKEN}/token?key=${KEY}`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'grant_type=refresh_token&refresh_token=' + encodeURIComponent(rt) });
-    if (!r.ok) throw new Error('refresh ' + r.status);
-    this.uid = r.body.user_id; this.idToken = r.body.id_token; this.refreshToken = r.body.refresh_token; this.exp = Date.now() + (+r.body.expires_in - 120) * 1000;
-    store.set('gdct-acc', JSON.stringify({ uid: this.uid, refresh: this.refreshToken }));
-  }
-  async token() { if (Date.now() > this.exp) await this.refresh(this.refreshToken); return this.idToken; }
 
   // Tạo tài liệu MỘT lần (có sẵn rồi thì coi như đã nhận). Trả về 'ok' | 'dup' | 'denied' | ném lỗi mạng.
   async create(path, fields) {
     const body = { writes: [{ update: { name: `${DOCROOT}/${path}`, fields }, currentDocument: { exists: false }, updateTransforms: [{ fieldPath: 't', setToServerValue: 'REQUEST_TIME' }] }] };
-    const r = await fetchJSON(`${FS}:commit?key=${KEY}`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + await this.token() }, body: JSON.stringify(body) });
+    const r = await fetchJSON(`${FS}:commit?key=${KEY}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     if (r.ok) return 'ok';
     const st = r.body?.error?.status;
     if (r.status === 409 || st === 'ALREADY_EXISTS' || st === 'FAILED_PRECONDITION') return 'dup';
     if (r.status === 403 || st === 'PERMISSION_DENIED') return 'denied';
-    if (r.status === 401) { await this.refresh(this.refreshToken); }
     throw new Error('Máy chủ trả lỗi ' + r.status);
   }
   async join() {
@@ -95,7 +78,7 @@ export class RestPhone {
   async waitNumber(cb) {
     for (let i = 0; ; i++) {
       try {
-        const r = await fetchJSON(`${FS}/games/${this.g}/nums/${this.uid}?key=${KEY}`, { headers: { Authorization: 'Bearer ' + await this.token() } });
+        const r = await fetchJSON(`${FS}/games/${this.g}/nums/${this.uid}?key=${KEY}`);
         const n = r.ok ? dec(r.body.fields?.n) : null;
         if (n) { cb(n); return n; }
       } catch (e) {}
@@ -107,7 +90,7 @@ export class RestPhone {
     onStatus('sending');
     for (let i = 0; ; i++) {
       try {
-        const r = await this.create(`games/${this.g}/answers/${q}_${this.uid}`, { q: { integerValue: String(q) }, a: { integerValue: String(a) } });
+        const r = await this.create(`games/${this.g}/answers/${q}_${this.uid}`, { q: { integerValue: String(q) }, a: { integerValue: String(a) }, p: { stringValue: this.uid } });
         onStatus(r === 'denied' ? 'denied' : 'ok'); return r;
       } catch (e) {
         if (Date.now() > deadline) { onStatus('late'); return 'late'; }

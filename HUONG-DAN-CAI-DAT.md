@@ -17,6 +17,7 @@ Ba ván thử ngày 12/10: mọi máy đều vào lớp và có số, nhưng ch�
 - **Điện thoại gửi đáp án bằng HTTPS thường** (chạy được trong trình duyệt của Zalo/Facebook), có **biên nhận "✓ Máy chủ đã nhận"**, lỗi mạng thì tự gửi lại.
 - **Nhận câu hỏi qua kênh trực tiếp**; kênh kẹt thì tự chuyển sang **"dự phòng"** (hỏi máy chủ 2,5 giây/lần). Góc trên điện thoại có chấm xanh "trực tiếp" hoặc vàng "dự phòng".
 - **Màn hình lớn đăng nhập bằng PIN**, nên Claude tự chạy được tổng duyệt trên máy chủ thật.
+- **Sinh viên không cần tạo tài khoản:** Firebase chỉ cho tạo ~150 tài khoản ẩn danh/giờ trên cùng một mạng (phát hiện khi tổng duyệt trên máy chủ thật 12/10). Mỗi điện thoại tự sinh một mã bí mật; bảng điểm công khai chỉ ghi theo số thứ tự.
 - **Thẻ màu dự phòng:** mạng sập hẳn thì sinh viên bấm "Dùng THẺ MÀU" trên điện thoại, giơ màn hình màu A/B/C/D hoặc ĐÚNG/SAI lên.
 
 ## Cập nhật luật bảo vệ (làm 1 lần, khoảng 2 phút)
@@ -24,7 +25,7 @@ Ba ván thử ngày 12/10: mọi máy đều vào lớp và có số, nhưng ch�
 2. Gõ `Firestore` vào ô **🔍 Search for products** ở đầu menu trái, mở **Firestore Database**.
 3. Mở thẻ **Rules**, bấm vào ô soạn luật, **xóa hết** (Ctrl+A rồi Delete).
 4. Dán toàn bộ đoạn luật Claude gửi trong cuộc trò chuyện (đã có sẵn mã PIN được mã hóa), bấm **Publish**.
-5. Kiểm tra **Authentication > Sign-in method**: mục **Anonymous** phải đang **Enabled**. (Mục Google không cần nữa.)
+5. Kiểm tra **Authentication > Sign-in method**: mục **Anonymous** phải đang **Enabled** (chỉ màn hình lớn dùng). Mục Google không cần nữa.
 
 ## Khi đứng lớp
 1. Laptop nối máy chiếu, mở https://meyko-z777.github.io/tro-choi-lop-hoc/host.html, nhập **mã PIN** (máy này chỉ cần nhập 1 lần), bấm F11.
