@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" width="1200" height="900">
+  <defs>
+    <radialGradient id="bg" cx="0.32" cy="0.42" r="0.85">
+      <stop offset="0" stop-color="#D8261E"/><stop offset="0.6" stop-color="#A9141A"/><stop offset="1" stop-color="#6E0A10"/>
+    </radialGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFE27A"/><stop offset="0.5" stop-color="#F2B91B"/><stop offset="1" stop-color="#C98A0B"/>
+    </linearGradient>
+    <linearGradient id="skin" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#C98B62"/><stop offset="0.35" stop-color="#EDBE93"/><stop offset="1" stop-color="#F7D3AE"/>
+    </linearGradient>
+    <linearGradient id="suit" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3A2B2C"/><stop offset="1" stop-color="#1A1213"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="900" fill="url(#bg)"/>
+  <!-- tia sáng -->
+  <g opacity="0.16" fill="#FFD25A">
+    <path d="M380 420 L-200 -40 L-200 120 Z"/><path d="M380 420 L60 -200 L220 -200 Z"/><path d="M380 420 L520 -200 L700 -200 Z"/>
+    <path d="M380 420 L1000 -100 L1100 60 Z"/><path d="M380 420 L-200 380 L-200 560 Z"/><path d="M380 420 L-120 1000 L60 1000 Z"/>
+    <path d="M380 420 L700 1000 L880 1000 Z"/><path d="M380 420 L-200 760 L-200 920 Z"/>
+  </g>
+  <circle cx="380" cy="420" r="300" fill="none" stroke="#FFD25A" stroke-opacity="0.25" stroke-width="6"/>
+  <circle cx="380" cy="420" r="340" fill="none" stroke="#FFD25A" stroke-opacity="0.15" stroke-width="3"/>
+
+  <!-- ===== CHÂN DUNG (phong cách tranh cổ động) ===== -->
+  <g stroke="#2A0A0C" stroke-width="5" stroke-linejoin="round" stroke-linecap="round">
+    <!-- vai áo -->
+    <path d="M40 900 C60 790 120 735 230 700 L300 670 L470 670 C560 700 650 745 690 830 L715 900 Z" fill="url(#suit)"/>
+    <!-- cổ -->
+    <path d="M300 560 L300 680 C340 705 420 705 455 680 L452 560 Z" fill="#D9A27A"/>
+    <!-- cổ áo sơ mi -->
+    <path d="M292 662 L372 760 L455 662 L430 650 L372 712 L318 650 Z" fill="#FFF8EC"/>
+    <!-- cà vạt chấm bi -->
+    <path d="M356 712 L390 712 L404 812 L374 880 L344 812 Z" fill="#5A1218"/>
+    <g fill="#FFF8EC" stroke="none"><circle cx="364" cy="745" r="5"/><circle cx="386" cy="770" r="5"/><circle cx="364" cy="795" r="5"/><circle cx="386" cy="822" r="5"/><circle cx="372" cy="850" r="4"/></g>
+    <!-- ve áo -->
+    <path d="M300 670 L250 700 L330 860 L346 812 Z" fill="#2E2122"/>
+    <path d="M455 670 L515 705 L418 860 L404 812 Z" fill="#2E2122"/>
+    <!-- tai -->
+    <ellipse cx="262" cy="430" rx="22" ry="40" fill="#D9A27A"/>
+    <!-- đầu: vầng trán hói rộng -->
+    <path d="M262 400 C250 255 335 165 425 170 C520 176 568 262 556 365 C550 430 534 478 512 520 C488 570 448 602 404 610 C350 615 300 588 282 530 C272 495 266 445 262 400 Z" fill="url(#skin)"/>
+    <!-- tóc hai bên thái dương -->
+    <path d="M262 352 C250 410 258 478 292 512 L300 486 C282 456 278 410 284 368 Z" fill="#7A4326"/>
+    <path d="M548 330 C556 370 552 410 540 440 L532 420 C538 395 540 365 536 338 Z" fill="#7A4326"/>
+    <!-- lông mày -->
+    <path d="M362 372 C385 360 410 362 424 370" fill="none" stroke-width="9"/>
+    <path d="M462 368 C482 358 506 362 520 374" fill="none" stroke-width="9"/>
+    <!-- mắt (nheo, sắc) -->
+    <path d="M370 400 C385 390 405 390 418 400 C404 408 384 408 370 400 Z" fill="#2A0A0C"/>
+    <path d="M468 398 C482 389 500 390 512 400 C500 407 482 407 468 398 Z" fill="#2A0A0C"/>
+    <!-- gò má, mũi -->
+    <path d="M444 400 C448 432 452 456 462 470 C452 478 436 478 428 470" fill="none" stroke-width="5"/>
+    <path d="M300 470 C320 520 350 560 380 580" fill="none" stroke="#B9805A" stroke-width="6"/>
+    <!-- ria mép -->
+    <path d="M392 498 C420 478 468 478 506 500 C486 512 470 506 450 504 C430 506 414 512 392 498 Z" fill="#8A4B2A"/>
+    <!-- chòm râu nhọn -->
+    <path d="M404 512 C410 548 428 590 446 622 C462 592 488 552 496 512 C478 524 462 520 450 520 C436 520 420 524 404 512 Z" fill="#8A4B2A"/>
+    <!-- điểm sáng trán -->
+    <ellipse cx="440" cy="245" rx="70" ry="34" fill="#FFE7CC" stroke="none" opacity="0.55"/>
+  </g>
+  <text x="380" y="880" text-anchor="middle" font-family="Inter, 'Segoe UI', Arial, sans-serif" font-weight="900" font-size="34" fill="#FFE27A" letter-spacing="8">V. I. LÊNIN</text>
+
+  <!-- ===== KHUNG CHỮ ===== -->
+  <g transform="translate(760 150)">
+    <rect x="0" y="0" width="380" height="600" rx="26" fill="#7A0D12" stroke="url(#gold)" stroke-width="14"/>
+    <rect x="24" y="24" width="332" height="552" rx="16" fill="none" stroke="#FFD25A" stroke-opacity="0.6" stroke-width="3"/>
+    <path d="M190 48 L203 86 L243 86 L211 110 L223 148 L190 125 L157 148 L169 110 L137 86 L177 86 Z" fill="url(#gold)"/>
+    <g font-family="Inter, 'Segoe UI', Arial, sans-serif" font-weight="900" text-anchor="middle" fill="#FFF3DC">
+      <text x="190" y="235" font-size="52">CHỦ</text>
+      <text x="190" y="300" font-size="52">NGHĨA</text>
+      <text x="190" y="392" font-size="66" fill="url(#gold)">DUY VẬT</text>
+      <text x="190" y="472" font-size="56" fill="url(#gold)">BIỆN</text>
+      <text x="190" y="540" font-size="56" fill="url(#gold)">CHỨNG</text>
+    </g>
+  </g>
+</svg>

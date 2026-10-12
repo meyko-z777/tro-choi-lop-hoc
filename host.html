@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ôn bài cũ - Màn hình lớn</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@500;700;800;900&display=swap" rel="stylesheet">
+<script src="vendor/qrcode.js"></script>
+<style>
+:root{--bg:#FFF7EC;--red:#D7261E;--mar:#7A1018;--gold:#B07D00;--yel:#FFCD00;--ink:#2B1D1D;--mute:#8C7563;--card:#fff;--line:#F0DCC8;--green:#2EAD5B;--no:#E04A3A}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#2B1D1D;overflow:hidden}
+body{font-family:'Be Vietnam Pro',Inter,'Segoe UI',Roboto,Arial,sans-serif;color:var(--ink)}
+#stage{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:0 0;background:var(--bg);overflow:hidden}
+.dots{position:absolute;inset:0;background-image:radial-gradient(rgba(215,38,30,.07) 3px,transparent 4px),radial-gradient(rgba(255,205,0,.16) 4px,transparent 5px);background-size:90px 90px,130px 130px;background-position:0 0,40px 60px;pointer-events:none}
+.scr{position:absolute;inset:0;display:none}.scr.on{display:block}
+.pill{display:inline-block;background:var(--mar);color:#fff;font-weight:800;letter-spacing:.12em;font-size:26px;padding:12px 30px;border-radius:40px}
+.card{background:var(--card);border:3px solid var(--line);border-radius:32px;box-shadow:0 10px 0 rgba(122,16,24,.08)}
+.btn{font:inherit;font-weight:900;font-size:34px;border:0;border-radius:24px;padding:22px 46px;background:var(--red);color:#fff;cursor:pointer;box-shadow:0 8px 0 var(--mar);transition:transform .1s}
+.btn:active{transform:translateY(4px);box-shadow:0 4px 0 var(--mar)}
+.btn.ghost{background:#fff;color:var(--mar);box-shadow:0 6px 0 var(--line);border:3px solid var(--line);font-size:22px;padding:12px 22px}
+.av{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;color:#fff;font-weight:900;flex:none}
+#topbar{position:absolute;left:60px;right:60px;top:34px;display:flex;align-items:center;gap:22px;z-index:5}
+#topbar .sp{flex:1}
+#mode{font-weight:800;font-size:20px;padding:8px 18px;border-radius:30px;background:#fff;border:3px solid var(--line);color:var(--gold)}
+#mode.live{color:var(--green)}
+#room{font-weight:900;font-size:26px;color:var(--mar)}
+/* ---- sảnh chờ ---- */
+#lobby h1{position:absolute;left:80px;top:120px;font-size:64px;font-weight:900;color:var(--red);line-height:1.1}
+#qrCard{position:absolute;left:80px;top:250px;width:620px;padding:34px;text-align:center}
+#qr{width:550px;height:550px;margin:0 auto;display:block;image-rendering:pixelated}
+#joinUrl{margin-top:18px;font-size:26px;font-weight:800;color:var(--mar);word-break:break-all}
+#tip{margin-top:10px;font-size:22px;color:var(--mute);font-weight:700}
+#count{position:absolute;left:780px;top:250px;display:flex;align-items:baseline;gap:22px}
+#count b{font-size:150px;font-weight:900;color:var(--red);line-height:1}
+#count span{font-size:44px;font-weight:800}
+#wall{position:absolute;left:780px;top:430px;width:1080px;height:330px;display:flex;flex-wrap:wrap;align-content:flex-start;gap:14px;overflow:hidden}
+.chip{display:flex;align-items:center;gap:10px;background:#fff;border:3px solid var(--line);border-radius:40px;padding:6px 18px 6px 6px;font-weight:900;font-size:26px;animation:popin .45s cubic-bezier(.3,1.6,.5,1)}
+.chip .av{width:48px;height:48px;font-size:28px}
+@keyframes popin{from{transform:scale(0)}to{transform:scale(1)}}
+#tease{position:absolute;left:780px;top:800px;display:flex;gap:26px;align-items:center}
+#tease .txt{font-size:24px;font-weight:700;line-height:1.45;width:420px}
+#tease .txt b{color:var(--red)}
+#startBtn{position:absolute;right:60px;bottom:60px;font-size:44px;padding:28px 60px}
+#demoBar{position:absolute;right:60px;top:110px;display:flex;gap:10px;align-items:center;font-weight:800;color:var(--gold);font-size:20px}
+/* ---- mảnh ghép ---- */
+.puz{position:relative;border-radius:22px;overflow:hidden;border:5px solid var(--mar);background:#6E0A10;flex:none}
+.puz img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.puz .grid{position:absolute;inset:0;display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(3,1fr);gap:3px;perspective:900px}
+.tile{background:linear-gradient(145deg,#8E1118,#5E0910);display:flex;align-items:center;justify-content:center;color:#FFCD00;font-weight:900;transition:transform .7s cubic-bezier(.5,0,.3,1.4),opacity .7s;border:2px solid rgba(255,205,0,.25)}
+.tile.open{transform:rotateY(180deg) scale(.6);opacity:0}
+.tile.flash{animation:tflash .9s}
+@keyframes tflash{0%{filter:brightness(1)}40%{filter:brightness(2.2)}100%{filter:brightness(1)}}
+/* ---- câu hỏi ---- */
+#qhead{position:absolute;left:60px;top:120px;width:1160px;display:flex;align-items:center;gap:18px}
+#qno{font-size:30px}
+#qtype{font-weight:800;font-size:26px;color:var(--gold)}
+#qtext{position:absolute;left:60px;top:190px;width:1160px;min-height:200px;padding:30px 40px;font-size:50px;font-weight:800;line-height:1.25;display:flex;align-items:center}
+#timer{position:absolute;left:1100px;top:96px;width:120px;height:120px}
+#timer svg{width:120px;height:120px;transform:rotate(-90deg)}
+#timer b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:46px;font-weight:900;color:var(--mar)}
+#opts{position:absolute;left:60px;top:430px;width:1160px;display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.opt{position:relative;display:flex;align-items:center;gap:22px;min-height:150px;padding:20px 28px;font-size:38px;font-weight:800;background:#fff;border:4px solid var(--line);border-radius:28px;overflow:hidden;transition:opacity .4s,transform .4s,border-color .4s}
+.opt .L{width:74px;height:74px;border-radius:20px;color:#fff;font-size:40px;font-weight:900;display:flex;align-items:center;justify-content:center;flex:none;z-index:1}
+.opt .t{z-index:1;flex:1}
+.opt .bar{position:absolute;left:0;top:0;bottom:0;width:0;opacity:.13;transition:width 1s cubic-bezier(.3,1,.4,1)}
+.opt .n{z-index:1;font-size:34px;font-weight:900;color:var(--mute);display:none}
+.opt.right{border-color:var(--green);transform:scale(1.03);box-shadow:0 0 0 6px rgba(46,173,91,.25)}
+.opt.right .n{color:var(--green)}
+.opt.wrong{opacity:.45}
+.opt.tf{min-height:250px;font-size:64px;justify-content:center}
+.rv .opt .n{display:block}
+#prog{position:absolute;left:60px;top:930px;width:1160px;display:flex;align-items:center;gap:20px;font-size:30px;font-weight:800}
+#prog .track{flex:1;height:26px;background:#fff;border:3px solid var(--line);border-radius:20px;overflow:hidden}
+#prog .fill{height:100%;width:0;background:linear-gradient(90deg,var(--yel),var(--red));transition:width .4s}
+#banner{position:absolute;left:60px;top:930px;width:1160px;font-size:36px;font-weight:900;color:var(--mar);display:none;align-items:center;gap:16px}
+.rv #banner{display:flex}.rv #prog{display:none}
+#nextBtn{position:absolute;left:60px;bottom:40px;display:none;font-size:38px}
+.rv #banner{top:840px}
+.rv #nextBtn{display:block}
+/* ---- bảng vàng ---- */
+#side{position:absolute;left:1270px;top:110px;width:590px}
+#side h3{font-size:30px;font-weight:900;color:var(--mar);letter-spacing:.06em;margin:8px 0 14px}
+#board{position:relative;height:625px}
+.row{position:absolute;left:0;right:0;height:56px;display:flex;align-items:center;gap:16px;padding:0 18px;background:#fff;border:3px solid var(--line);border-radius:18px;transition:transform .7s cubic-bezier(.3,1.3,.5,1),opacity .5s;font-weight:900;font-size:28px}
+.row .rk{width:44px;text-align:center;color:var(--mute);font-size:26px}
+.row .av{width:44px;height:44px;font-size:26px}
+.row .id{flex:1}
+.row .sc{color:var(--mar);font-variant-numeric:tabular-nums}
+.row .st{font-size:22px;color:#E25A00;width:50px;text-align:right}
+.row.r1{background:linear-gradient(90deg,#FFF3C4,#fff);border-color:var(--yel)}
+.row.r1 .rk{color:var(--gold)}
+.row.jump{animation:jump .9s}
+@keyframes jump{0%{box-shadow:0 0 0 0 rgba(255,205,0,.9)}50%{box-shadow:0 0 0 14px rgba(255,205,0,0)}}
+#side .puz{width:290px;height:218px}
+#puzRow{display:flex;gap:20px;align-items:center;margin-top:10px}
+#puzRow .txt{font-size:22px;font-weight:800;line-height:1.4;color:var(--mar)}
+.rv #board{height:315px}
+.rv #side .puz{width:500px;height:375px;align-self:center}
+.rv #puzRow{flex-direction:column;align-items:stretch;margin-top:0}
+#top1{position:absolute;left:1270px;top:96px;font-size:24px;font-weight:900;color:var(--gold);opacity:0;transition:opacity .3s}
+/* ---- tổng kết ---- */
+#final .puz{position:absolute;left:60px;top:150px;width:1040px;height:780px}
+#finalCap{position:absolute;left:60px;top:950px;width:1040px;text-align:center;font-size:36px;font-weight:900;color:var(--mar)}
+#podium{position:absolute;left:1160px;top:130px;width:700px;display:flex;align-items:flex-end;justify-content:center;gap:18px;height:470px}
+.pod{display:flex;flex-direction:column;align-items:center;gap:10px;font-weight:900}
+.pod .av{width:120px;height:120px;font-size:70px;animation:popin .6s cubic-bezier(.3,1.6,.5,1) both}
+.pod .bl{width:200px;border-radius:20px 20px 0 0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:14px;color:#fff;font-size:56px}
+.pod .bl small{font-size:24px;opacity:.9}
+.pod .id{font-size:40px}
+#rest{position:absolute;left:1160px;top:640px;width:700px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+#rest .row{position:relative}
+#login{position:fixed;inset:0;background:rgba(43,29,29,.85);display:none;align-items:center;justify-content:center;z-index:50}
+#login .card{padding:50px 60px;text-align:center;max-width:640px;font-size:22px;line-height:1.5}
+#login h2{font-size:34px;color:var(--mar);margin-bottom:16px}
+#err{position:absolute;left:60px;bottom:14px;font-size:20px;color:var(--no);font-weight:700}
+</style></head>
+<body>
+<div id="stage">
+  <div class="dots"></div>
+  <div id="topbar"><span class="pill">ÔN BÀI CŨ</span><span class="sp"></span><span id="mode">…</span><span id="room"></span><button class="btn ghost" id="newBtn" title="Tạo phòng mới (mã mới)">Ván mới</button></div>
+
+  <section class="scr on" id="lobby">
+    <h1 id="title"></h1>
+    <div class="card" id="qrCard"><canvas id="qr" width="550" height="550"></canvas><div id="joinUrl"></div><div id="tip">Quét bằng Camera hoặc Zalo · nên dùng 4G cho nhanh</div></div>
+    <div id="count"><b id="nJoin">0</b><span>bạn đã vào lớp</span></div>
+    <div id="wall"></div>
+    <div id="tease"><div class="puz" id="puzL" style="width:280px;height:210px"></div>
+      <div class="txt">🧩 <b>MẢNH GHÉP BÍ ẨN</b><br>Câu nào <b>từ 60%</b> cả lớp đúng → lật <b>2 mảnh</b><br>Từ 30% → lật 1 mảnh. Cả lớp cùng mở bức tranh!</div></div>
+    <div id="demoBar"></div>
+    <button class="btn" id="startBtn">Bắt đầu ▶</button>
+  </section>
+
+  <section class="scr" id="play">
+    <div id="qhead"><span class="pill" id="qno">CÂU 1/6</span><span id="qtype"></span></div>
+    <div id="timer"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" fill="#fff" stroke="#F0DCC8" stroke-width="12"/><circle id="tArc" cx="60" cy="60" r="52" fill="none" stroke="#D7261E" stroke-width="12" stroke-linecap="round" stroke-dasharray="326.7" stroke-dashoffset="0"/></svg><b id="tNum">20</b></div>
+    <div class="card" id="qtext"></div>
+    <div id="opts"></div>
+    <div id="prog"><span id="nAns">0 / 0 đã trả lời</span><div class="track"><div class="fill" id="ansFill"></div></div></div>
+    <div id="banner"></div>
+    <div id="top1">⚡ VỪA LÊN ĐẦU BẢNG!</div>
+    <div id="side"><h3>🏆 BẢNG VÀNG</h3><div id="board"></div>
+      <div id="puzRow"><div class="puz" id="puzS"></div><div class="txt" id="puzTxt"></div></div></div>
+    <button class="btn" id="nextBtn">Câu tiếp ▶</button>
+  </section>
+
+  <section class="scr" id="final">
+    <div class="puz" id="puzF"></div>
+    <div id="finalCap"></div>
+    <div id="podium"></div>
+    <div id="rest"></div>
+  </section>
+  <div id="err"></div>
+</div>
+<div id="login"><div class="card"><h2>Đăng nhập giảng viên</h2><p>Chỉ tài khoản Google của giảng viên (đã khai báo trong Firebase) mới điều khiển được trò chơi. Sinh viên không cần đăng nhập.</p><br><button class="btn" id="loginBtn">Đăng nhập Google</button><p id="loginErr" style="color:#E04A3A;margin-top:14px"></p></div></div>
+
+<script type="module">
+import { makeNet, DEMO, EMU } from './net.js';
+import { avatar, pad, TOTAL_TILES, GRACE_MS, tilesFor, points, sameSet, LETTERS, OPT_COLORS } from './shared.js';
+import { QUESTIONS, TITLE, decodeKey } from './cauhoi.js';
+
+const $ = id => document.getElementById(id);
+const KEYS = QUESTIONS.map(q => decodeKey(q.k)), NQ = QUESTIONS.length;
+const TYPE_LABEL = { mc: 'Chọn 1 đáp án đúng', tf: 'Đúng hay Sai?', multi: 'Chọn TẤT CẢ đáp án đúng' };
+const IMG = 'hinh-ghep.svg';
+
+/* ---------- co giãn sân khấu 1920x1080 theo cửa sổ ---------- */
+function fit() { const s = Math.min(innerWidth / 1920, innerHeight / 1080); $('stage').style.transform = `scale(${s}) translate(-50%,-50%)`; }
+addEventListener('resize', fit); fit();
+
+/* ---------- âm thanh nhỏ (WebAudio) ---------- */
+let AC = null;
+function beep(f, d = 0.12, type = 'sine', vol = 0.15, slide = 0) {
+  if (!AC) return; const t = AC.currentTime, o = AC.createOscillator(), g = AC.createGain();
+  o.type = type; o.frequency.setValueAtTime(f, t); if (slide) o.frequency.exponentialRampToValueAtTime(f * slide, t + d);
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + d); o.connect(g).connect(AC.destination); o.start(t); o.stop(t + d);
+}
+const SFX = {
+  join() { beep(700, 0.08, 'sine', 0.06, 1.8); },
+  tick() { beep(1200, 0.05, 'square', 0.04); },
+  top() { beep(520, 0.12, 'triangle', 0.12, 2); setTimeout(() => beep(1040, 0.18, 'triangle', 0.1), 110); },
+  reveal() { [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => beep(f, 0.25, 'triangle', 0.12), i * 90)); },
+  tile() { beep(300, 0.3, 'sawtooth', 0.05, 3); },
+  fanfare() { [392, 523, 659, 784, 659, 784, 1046].forEach((f, i) => setTimeout(() => beep(f, 0.35, 'triangle', 0.14), i * 140)); },
+};
+addEventListener('pointerdown', () => { if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)(); }, { once: true });
+
+/* ---------- mảnh ghép ---------- */
+const ORDER = [5, 2, 9, 0, 7, 10, 3, 6, 11, 1, 8, 4];      // thứ tự lật cố định
+function buildPuz(el, big) {
+  el.innerHTML = `<img src="${IMG}" alt=""><div class="grid">${Array.from({ length: TOTAL_TILES }, (_, i) => `<div class="tile" style="font-size:${big ? 90 : 34}px">?</div>`).join('')}</div>`;
+}
+function setTiles(el, n, animateFrom = n) {
+  const tiles = el.querySelectorAll('.tile');
+  ORDER.forEach((idx, k) => {
+    const t = tiles[idx]; if (!t) return;
+    if (k < Math.min(animateFrom, n)) t.classList.add('open');
+    else if (k < n) setTimeout(() => { t.classList.add('flash'); setTimeout(() => { t.classList.add('open'); SFX.tile(); }, 500); }, (k - animateFrom) * 700);
+    else t.classList.remove('open');
+  });
+}
+['puzL', 'puzS'].forEach(id => buildPuz($(id), false)); buildPuz($('puzF'), true);
+$('puzL').querySelectorAll('.tile').forEach(t => t.style.fontSize = '26px');
+
+/* ---------- trạng thái ---------- */
+let net, g, game = null, hostOffset = 0, sentAt = 0;
+let roster = {};                 // uid -> số thứ tự
+let nextN = 1;
+const joined = [];               // uid theo thứ tự đến (cho bức tường)
+const answers = new Map();       // `${q}_${uid}` -> {a,t}
+const bots = [];                 // chỉ dùng ở chế độ thử
+let stats = null, prevTop = null, revealedTilesShown = 0;
+
+function newCode() { return String(1000 + Math.floor(Math.random() * 9000)); }
+const now = () => Date.now() + hostOffset;
+
+/* ---------- chấm điểm (tính lại toàn bộ từ dữ liệu gốc, nên tải lại trang không mất điểm) ---------- */
+function compute() {
+  const cur = game?.q ?? -1, live = game?.state === 'question';
+  const S = new Map();
+  for (const uid in roster) S.set(uid, { uid, n: roster[uid], score: 0, streak: 0, time: 0, gained: 0, last: -1 });
+  const counts = Array(6).fill(0); let nAns = 0, nRight = 0;
+  for (let qi = 0; qi <= cur && qi < NQ; qi++) {
+    const st = game?.startsMs?.[qi]; if (!st) continue;
+    const L = QUESTIONS[qi].limit;
+    for (const p of S.values()) {
+      const an = answers.get(qi + '_' + p.uid);
+      const ok = an && an.t - st <= L * 1000 + GRACE_MS;
+      if (qi === cur) { p.gained = 0; p.last = ok ? 0 : -1; }
+      if (ok) {
+        const right = sameSet(an.a, KEYS[qi]); const el = Math.max(0, an.t - st);
+        if (qi === cur) { nAns++; an.a.forEach(i => counts[i]++); }
+        if (right) { p.streak++; const pt = points(true, el, L, p.streak); p.score += pt; p.time += el; if (qi === cur) { p.gained = pt; p.last = 1; nRight++; } }
+        else { p.streak = 0; }
+      } else if (!(live && qi === cur)) p.streak = 0;
+    }
+  }
+  const list = [...S.values()].sort((a, b) => b.score - a.score || a.time - b.time || a.n - b.n);
+  list.forEach((p, i) => p.rank = i + 1);
+  return { list, counts, nAns, nRight, total: S.size };
+}
+
+/* ---------- vẽ ---------- */
+function show(id) { document.querySelectorAll('.scr').forEach(s => s.classList.toggle('on', s.id === id)); }
+function avHTML(n, size) { const a = avatar(n); return `<span class="av" style="background:${a.c};width:${size}px;height:${size}px;font-size:${size * 0.58}px">${a.e}</span>`; }
+
+const rowEls = new Map();
+function renderBoard(list, maxRows) {
+  const board = $('board'), top = list.slice(0, maxRows), keep = new Set(top.map(p => p.uid));
+  for (const [uid, el] of rowEls) if (!keep.has(uid)) { el.style.opacity = 0; setTimeout(() => el.remove(), 500); rowEls.delete(uid); }
+  top.forEach((p, i) => {
+    let el = rowEls.get(p.uid);
+    if (!el) { el = document.createElement('div'); el.className = 'row'; el.style.transform = `translateY(${maxRows * 63}px)`; el.style.opacity = 0; board.appendChild(el); rowEls.set(p.uid, el); requestAnimationFrame(() => el.style.opacity = 1); }
+    el.innerHTML = `<span class="rk">${i + 1}</span>${avHTML(p.n, 44)}<span class="id">${pad(p.n)}</span><span class="st">${p.streak >= 2 ? '🔥' + p.streak : ''}</span><span class="sc">${p.score}</span>`;
+    el.classList.toggle('r1', i === 0);
+    requestAnimationFrame(() => el.style.transform = `translateY(${i * 63}px)`);
+  });
+  const lead = top[0]?.uid || null;
+  if (lead && prevTop && lead !== prevTop && top[0].score > 0) {
+    const el = rowEls.get(lead); el.classList.remove('jump'); void el.offsetWidth; el.classList.add('jump');
+    $('top1').textContent = `⚡ ${pad(top[0].n)} VỪA LÊN ĐẦU BẢNG!`; $('top1').style.opacity = 1; setTimeout(() => $('top1').style.opacity = 0, 1800); SFX.top();
+  }
+  prevTop = lead;
+}
+
+function renderLobby() {
+  $('nJoin').textContent = Object.keys(roster).length;
+}
+let wallQueue = [];
+function addChips(uids) {
+  const wall = $('wall');
+  for (const uid of uids) {
+    const n = roster[uid]; if (!n) continue;
+    const c = document.createElement('div'); c.className = 'chip'; c.innerHTML = `${avHTML(n, 48)}${pad(n)}`;
+    wall.prepend(c);
+  }
+  while (wall.children.length > 28) wall.lastChild.remove();
+  if (uids.length) SFX.join();
+}
+
+function renderQuestion(rv) {
+  const qi = game.q, Qd = QUESTIONS[qi];
+  $('play').classList.toggle('rv', rv);
+  $('qno').textContent = `CÂU ${qi + 1}/${NQ}`;
+  $('qtype').textContent = TYPE_LABEL[Qd.type];
+  $('qtext').textContent = Qd.text;
+  const box = $('opts'); box.innerHTML = '';
+  Qd.options.forEach((o, i) => {
+    const d = document.createElement('div'); d.className = 'opt' + (Qd.type === 'tf' ? ' tf' : '');
+    const col = Qd.type === 'tf' ? (i === 0 ? '#2EAD5B' : '#E04A3A') : OPT_COLORS[i];
+    d.innerHTML = `<div class="bar" style="background:${col}"></div>${Qd.type === 'tf' ? '' : `<div class="L" style="background:${col}">${LETTERS[i]}</div>`}<div class="t">${o}</div><div class="n" id="cnt${i}"></div>`;
+    if (Qd.type === 'tf') d.style.color = col;
+    box.appendChild(d);
+  });
+  $('timer').style.visibility = rv ? 'hidden' : 'visible';
+}
+function renderReveal(c) {
+  const qi = game.q, key = KEYS[qi];
+  [...$('opts').children].forEach((d, i) => {
+    d.classList.add(key.includes(i) ? 'right' : 'wrong');
+    const pct = c.nAns ? Math.round(c.counts[i] / c.nAns * 100) : 0;
+    d.querySelector('.bar').style.width = pct + '%'; d.querySelector('.n').textContent = c.counts[i] + (key.includes(i) ? ' ✓' : '');
+  });
+  const rate = c.total ? c.nRight / c.total : 0, add = game.reveal?.add ?? 0;
+  $('banner').innerHTML = `✅ ${Math.round(rate * 100)}% cả lớp trả lời đúng ${add ? `→ lật <span style="color:#D7261E">${add} mảnh ghép!</span>` : '→ chưa lật được mảnh nào 😅'}`;
+  $('nextBtn').textContent = qi < NQ - 1 ? 'Câu tiếp ▶' : 'Tổng kết 🏁';
+}
+
+/* ---------- vòng lặp ---------- */
+let dirty = true, lastTick = -1;
+function loop() {
+  requestAnimationFrame(loop);
+  if (!game) return;
+  if (game.state === 'question' && game.qStartMs) {
+    const L = QUESTIONS[game.q].limit, left = Math.max(0, game.qStartMs + L * 1000 - now());
+    const s = Math.ceil(left / 1000); $('tNum').textContent = s;
+    $('tArc').style.strokeDashoffset = 326.7 * (1 - left / (L * 1000));
+    $('tArc').style.stroke = left < 5000 ? '#E04A3A' : '#D7261E';
+    if (s !== lastTick && s <= 5 && s > 0) { lastTick = s; SFX.tick(); }
+    const everyone = stats && stats.total > 0 && stats.nAns >= stats.total;
+    if (left <= 0 && now() > game.qStartMs + L * 1000 + 900) doReveal();
+    else if (everyone && !allAnsweredAt) allAnsweredAt = Date.now();
+    if (allAnsweredAt && Date.now() - allAnsweredAt > 1200) doReveal();
+  }
+  if (dirty) { dirty = false; refresh(); }
+}
+let allAnsweredAt = 0, refreshAt = 0;
+function refresh() {
+  if (Date.now() - refreshAt < 250) { dirty = true; return; }
+  refreshAt = Date.now();
+  stats = compute();
+  if (game.state === 'lobby') renderLobby();
+  if (game.state === 'question') {
+    $('nAns').textContent = `${stats.nAns} / ${stats.total} đã trả lời`;
+    $('ansFill').style.width = (stats.total ? stats.nAns / stats.total * 100 : 0) + '%';
+    renderBoard(stats.list, 10);
+  }
+  if (game.state === 'reveal') { renderBoard(stats.list, 5); }
+  $('puzTxt').innerHTML = `🧩 Đã mở <b>${game.tiles || 0}/${TOTAL_TILES}</b> mảnh`;
+}
+
+/* ---------- điều khiển ván chơi ---------- */
+let busy = false;
+async function startQuestion(qi) {
+  if (busy) return; busy = true;
+  try {
+    allAnsweredAt = 0; lastTick = -1; sentAt = Date.now();
+    const Qd = QUESTIONS[qi];
+    await net.setGame(g, { state: 'question', q: qi, question: { type: Qd.type, text: Qd.text, options: Qd.options, limit: Qd.limit }, limit: Qd.limit,
+      qStart: 'SERVER', starts: { [qi]: 'SERVER' }, results: null, reveal: null });
+  } catch (e) { err(e); } finally { busy = false; }
+}
+let revealing = false;
+async function doReveal() {
+  if (revealing || game.state !== 'question') return; revealing = true;
+  try {
+    const c = compute(), rate = c.total ? c.nRight / c.total : 0;
+    const add = Math.min(TOTAL_TILES - (game.tiles || 0), tilesFor(rate));
+    const results = {}; c.list.forEach(p => results[p.uid] = [p.score, p.rank, p.last, p.streak, p.gained]);
+    await net.setGame(g, { state: 'reveal', revealAt: Date.now(), reveal: { key: KEYS[game.q], counts: c.counts.slice(0, QUESTIONS[game.q].options.length), rate, add }, results, tiles: (game.tiles || 0) + add, total: c.total });
+  } catch (e) { err(e); } finally { revealing = false; }
+}
+async function finish() {
+  const c = compute(); const results = {}; c.list.forEach(p => results[p.uid] = [p.score, p.rank, p.last, p.streak, p.gained]);
+  await net.setGame(g, { state: 'end', results, total: c.total }).catch(err);
+}
+function next() {
+  if (!game) return;
+  if (game.state === 'lobby') { if (!Object.keys(roster).length && !confirm('Chưa có ai vào lớp. Vẫn bắt đầu?')) return; startQuestion(0); }
+  else if (game.state === 'reveal') { game.q < NQ - 1 ? startQuestion(game.q + 1) : finish(); }
+}
+$('startBtn').onclick = next; $('nextBtn').onclick = next;
+addEventListener('keydown', e => { if (e.code === 'Space' || e.code === 'ArrowRight' || e.code === 'Enter') { e.preventDefault(); next(); } });
+$('newBtn').onclick = () => { if (confirm('Tạo phòng mới? Sinh viên sẽ phải quét mã QR mới.')) { const c = newCode(); localStorage.setItem('gdct-host-g', c); const u = new URL(location.href); u.searchParams.set('g', c); location.href = u; } };
+
+/* ---------- khi trạng thái ván thay đổi ---------- */
+let lastState = '', lastQ = -2;
+function onGame(d, pending) {
+  if (!d) return;
+  if (d.state === 'question' && !pending && d.qStartMs && sentAt) { hostOffset = d.qStartMs - (sentAt + Date.now()) / 2; sentAt = 0; }
+  game = d;
+  const key = d.state + ':' + d.q;
+  if (key !== lastState + ':' + lastQ) {
+    if (d.state === 'lobby') show('lobby');
+    if (d.state === 'question') { show('play'); renderQuestion(false); setTiles($('puzS'), d.tiles || 0); revealedTilesShown = d.tiles || 0; prevTop = null; if (DEMO) botsAnswer(d.q); }
+    if (d.state === 'reveal') { show('play'); renderQuestion(true); stats = compute(); renderReveal(stats); renderBoard(stats.list, 5); SFX.reveal(); setTiles($('puzS'), d.tiles || 0, revealedTilesShown); revealedTilesShown = d.tiles || 0; }
+    if (d.state === 'end') showFinal();
+    lastState = d.state; lastQ = d.q;
+  } else if (d.state === 'reveal') { stats = compute(); renderReveal(stats); }
+  dirty = true;
+}
+function showFinal() {
+  show('final'); const c = compute(), opened = game.tiles || 0;
+  setTiles($('puzF'), 0); setTimeout(() => setTiles($('puzF'), TOTAL_TILES, 0), 600);
+  $('finalCap').innerHTML = `Cả lớp tự mở được <span style="color:#D7261E">${opened}/${TOTAL_TILES}</span> mảnh · Đây là <b>V. I. Lênin</b> và <b>Chủ nghĩa duy vật biện chứng</b>!`;
+  const top = c.list.slice(0, 3), H = [300, 220, 160], col = ['#D9A400', '#8C99A6', '#B87333'], ord = [1, 0, 2];
+  $('podium').innerHTML = ord.filter(i => top[i]).map(i => `<div class="pod" style="animation-delay:${(2 - i) * .5}s">${avHTML(top[i].n, 120)}<div class="id">${pad(top[i].n)}</div><div class="bl" style="height:${H[i]}px;background:${col[i]}">${i + 1}<small>${top[i].score} điểm</small></div></div>`).join('');
+  $('rest').innerHTML = c.list.slice(3, 11).map(p => `<div class="row"><span class="rk">${p.rank}</span>${avHTML(p.n, 44)}<span class="id">${pad(p.n)}</span><span class="sc">${p.score}</span></div>`).join('');
+  setTimeout(SFX.fanfare, 400);
+}
+
+/* ---------- người chơi vào lớp ---------- */
+let rosterTimer = null;
+function onPlayers(list) {
+  list.sort((a, b) => a.t - b.t || (a.uid < b.uid ? -1 : 1));
+  const fresh = [];
+  for (const p of list) if (!roster[p.uid]) { roster[p.uid] = nextN++; fresh.push(p.uid); }
+  if (!fresh.length) return;
+  addChips(fresh); dirty = true;
+  if (!rosterTimer) rosterTimer = setTimeout(() => { rosterTimer = null; net.setRoster(g, roster).catch(err); }, DEMO ? 50 : 1000);
+}
+function onAnswers(list) { for (const a of list) if (!answers.has(a.q + '_' + a.uid)) answers.set(a.q + '_' + a.uid, a); dirty = true; }
+
+/* ---------- máy ảo (chế độ thử) ---------- */
+function addBots(k) {
+  const list = []; for (let i = 0; i < k; i++) { const uid = 'bot' + (bots.length + 1); bots.push({ uid, skill: 0.45 + Math.random() * 0.5, speed: 0.15 + Math.random() * 0.7 }); list.push({ uid, t: Date.now() + i }); }
+  let i = 0; const step = () => { net.botJoin(list.slice(i, i + 8)); i += 8; if (i < list.length) setTimeout(step, 60); }; step();
+}
+function botsAnswer(qi) {
+  const Qd = QUESTIONS[qi], key = KEYS[qi];
+  for (const b of bots) {
+    if (Math.random() < 0.06) continue;
+    const delay = 1200 + (Qd.limit * 1000 - 2500) * Math.min(1, b.speed * (0.6 + Math.random() * 0.8));
+    setTimeout(() => {
+      let a; if (Math.random() < b.skill) a = key.slice();
+      else { const n = Qd.options.length; a = Qd.type === 'multi' ? [Math.floor(Math.random() * n)] : [(key[0] + 1 + Math.floor(Math.random() * (n - 1))) % n]; }
+      net.botAnswer([{ uid: b.uid, q: qi, a, t: Date.now() }]);
+    }, delay);
+  }
+}
+
+function err(e) { console.error(e); $('err').textContent = '⚠ ' + (e?.message || e); setTimeout(() => $('err').textContent = '', 8000); }
+
+/* ---------- khởi động ---------- */
+async function boot() {
+  $('title').textContent = TITLE;
+  net = await makeNet();
+  $('mode').textContent = DEMO ? 'CHẾ ĐỘ THỬ (1 máy)' : EMU ? 'GIẢ LẬP FIREBASE' : '● TRỰC TUYẾN';
+  $('mode').classList.toggle('live', !DEMO);
+  const user = await net.signInHost(false);
+  if (!user) { $('login').style.display = 'flex'; await new Promise(res => { $('loginBtn').onclick = async () => { try { await net.signInHost(true); $('login').style.display = 'none'; res(); } catch (e) { $('loginErr').textContent = 'Không đăng nhập được: ' + e.message; } }; }); }
+  const P = new URLSearchParams(location.search);
+  g = P.get('g') || localStorage.getItem('gdct-host-g') || newCode();
+  localStorage.setItem('gdct-host-g', g);
+  $('room').textContent = 'Mã phòng ' + g;
+  const join = new URL('./', location.href); join.searchParams.set('g', g); if (DEMO) join.searchParams.set('demo', '1'); if (EMU) join.searchParams.set('emu', '1');
+  const qr = qrcode(0, 'M'); qr.addData(join.href); qr.make();
+  const cv = $('qr'), cx = cv.getContext('2d'), N = qr.getModuleCount(), m = 2, s = cv.width / (N + m * 2);
+  cx.fillStyle = '#fff'; cx.fillRect(0, 0, cv.width, cv.height); cx.fillStyle = '#2B1D1D';
+  for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) if (qr.isDark(r, c)) cx.fillRect(Math.floor((c + m) * s), Math.floor((r + m) * s), Math.ceil(s), Math.ceil(s));
+  $('joinUrl').textContent = join.href.replace(/^https?:\/\//, '');
+
+  roster = await net.getRoster(g); nextN = Math.max(0, ...Object.values(roster)) + 1;
+  let first = true;
+  net.onGameHost(g, (d, pending) => {
+    if (first) { first = false; if (!d) { net.setGame(g, { state: 'lobby', q: -1, title: TITLE, nq: NQ, tiles: 0, starts: {}, results: null, reveal: null, question: null }, false).catch(err); return; } }
+    onGame(d, pending);
+  });
+  if (DEMO) { first = false; await net.setGame(g, { state: 'lobby', q: -1, title: TITLE, nq: NQ, tiles: 0, starts: {}, results: null, reveal: null, question: null }, false);
+    $('demoBar').innerHTML = 'Máy ảo: <button class="btn ghost" data-k="10">+10</button><button class="btn ghost" data-k="100">+100</button><button class="btn ghost" data-k="377">+377</button>';
+    $('demoBar').onclick = e => { const k = +e.target.dataset.k; if (k) addBots(k); };
+  }
+  net.onPlayers(g, onPlayers);
+  net.onAnswers(g, onAnswers);
+  loop();
+}
+boot().catch(err);
+</script>
+</body></html>

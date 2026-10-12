@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#7A1018">
+<title>Ôn bài cũ - Giáo dục chính trị</title>
+<style>
+:root{--bg:#FFF7EC;--red:#D7261E;--mar:#7A1018;--gold:#B07D00;--yel:#FFCD00;--ink:#2B1D1D;--mute:#8C7563;--line:#F0DCC8;--green:#2EAD5B;--no:#E04A3A}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{font-family:-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--ink);display:flex;flex-direction:column;min-height:100dvh}
+header{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--mar);color:#fff;font-weight:800}
+header .av{width:40px;height:40px;font-size:24px}
+header .id{font-size:22px}
+header .sp{flex:1}
+header .sc{font-size:18px;color:var(--yel)}
+.av{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;flex:none}
+main{flex:1;display:flex;flex-direction:column;padding:18px 16px 24px;gap:14px}
+.center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:14px}
+.big{font-size:30px;font-weight:900;line-height:1.2}
+.mute{color:var(--mute);font-weight:600;font-size:17px;line-height:1.45}
+.me{width:150px;height:150px;font-size:90px;animation:bob 2.4s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-8px)}}
+.num{font-size:64px;font-weight:900;color:var(--red);letter-spacing:.04em}
+.qmeta{display:flex;justify-content:space-between;align-items:center;font-weight:800;color:var(--gold);font-size:16px}
+.tbar{height:10px;background:#fff;border:2px solid var(--line);border-radius:10px;overflow:hidden}
+.tbar i{display:block;height:100%;background:var(--red);width:100%}
+.qtext{font-size:21px;font-weight:800;line-height:1.35;background:#fff;border:2px solid var(--line);border-radius:18px;padding:14px 16px}
+.opts{display:grid;gap:12px}
+.opt{display:flex;align-items:center;gap:14px;min-height:68px;padding:12px 14px;border-radius:18px;border:3px solid transparent;background:#fff;font:inherit;font-size:19px;font-weight:800;color:var(--ink);text-align:left;box-shadow:0 5px 0 var(--line);cursor:pointer}
+.opt .L{width:44px;height:44px;border-radius:12px;color:#fff;font-weight:900;font-size:22px;display:flex;align-items:center;justify-content:center;flex:none}
+.opt.sel{border-color:var(--ink);transform:translateY(3px);box-shadow:0 2px 0 var(--line)}
+.opt.tf{justify-content:center;font-size:32px;min-height:120px;color:#fff}
+.send{font:inherit;font-weight:900;font-size:22px;border:0;border-radius:18px;padding:18px;background:var(--red);color:#fff;box-shadow:0 6px 0 var(--mar)}
+.send:disabled{opacity:.4}
+.res{font-size:76px}
+.ok{color:var(--green)}.bad{color:var(--no)}
+.pts{font-size:40px;font-weight:900;color:var(--mar)}
+.rank{background:#fff;border:2px solid var(--line);border-radius:18px;padding:12px 22px;font-weight:800;font-size:20px}
+input{font:inherit;font-size:34px;font-weight:900;text-align:center;letter-spacing:.3em;width:220px;padding:12px;border-radius:16px;border:3px solid var(--line)}
+.err{color:var(--no);font-weight:700}
+</style></head>
+<body>
+<header id="hd" style="display:none"><span id="hAv" class="av"></span><span class="id" id="hId"></span><span class="sp"></span><span class="sc" id="hSc"></span></header>
+<main id="app"><div class="center"><div class="big">Đang vào lớp…</div><div class="mute">Chờ một chút nhé</div></div></main>
+<script type="module">
+import { makeNet, DEMO } from './net.js';
+import { avatar, pad, LETTERS, OPT_COLORS } from './shared.js';
+
+const $ = id => document.getElementById(id), app = $('app');
+const P = new URLSearchParams(location.search);
+let g = P.get('g'), net, uid, myN = null, game = null, lastKey = '', timerRAF = 0;
+
+function screen(html) { app.innerHTML = html; }
+function err(msg) { screen(`<div class="center"><div class="big">😵 Có lỗi kết nối</div><div class="mute">${msg}</div><button class="send" onclick="location.reload()">Thử lại</button></div>`); }
+
+const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
+const answered = q => store.get(`gdct-a-${g}-${uid}-${q}`);
+
+function header() {
+  if (!myN) return; const a = avatar(myN);
+  $('hd').style.display = 'flex'; $('hAv').style.background = a.c; $('hAv').textContent = a.e; $('hId').textContent = pad(myN);
+  const r = game?.results?.[uid]; $('hSc').textContent = r ? r[0] + ' điểm' : '';
+}
+
+function render() {
+  cancelAnimationFrame(timerRAF);
+  header();
+  if (!game) return screen(`<div class="center"><div class="big">⏳ Phòng chưa mở</div><div class="mute">Thầy/cô sắp bắt đầu, giữ nguyên trang này nhé.</div></div>`);
+  const s = game.state;
+  if (!myN && s === 'lobby') return screen(`<div class="center"><div class="big">Đang cấp số cho bạn…</div><div class="mute">Mỗi bạn một số và một linh vật riêng.</div></div>`);
+  if (s === 'lobby') { const a = avatar(myN); return screen(`<div class="center"><div class="mute">Bạn là</div><div class="av me" style="background:${a.c}">${a.e}</div><div class="num">${pad(myN)}</div><div class="big" style="font-size:22px">Nhìn lên màn hình lớn 👀</div><div class="mute">Tìm linh vật của bạn trên màn hình.<br>Chờ thầy/cô bấm bắt đầu nhé!</div></div>`); }
+  if (s === 'question') return renderQ();
+  if (s === 'reveal' || s === 'end') return renderResult(s === 'end');
+}
+
+function renderQ() {
+  const q = game.q, Qd = game.question; if (!Qd) return;
+  if (answered(q)) return screen(`<div class="center"><div class="res">✍️</div><div class="big">Đã chốt đáp án!</div><div class="mute">Chờ cả lớp trả lời xong…<br>Kết quả sẽ hiện ngay tại đây.</div></div>`);
+  const tf = Qd.type === 'tf', multi = Qd.type === 'multi';
+  screen(`<div class="qmeta"><span>CÂU ${q + 1}/${game.nq}</span><span id="tl"></span></div><div class="tbar"><i id="tb"></i></div>
+    <div class="qtext">${Qd.text}</div>
+    <div class="opts" style="${tf ? 'grid-template-columns:1fr 1fr' : ''}">${Qd.options.map((o, i) => tf
+      ? `<button class="opt tf" data-i="${i}" style="background:${i ? '#E04A3A' : '#2EAD5B'}">${o}</button>`
+      : `<button class="opt" data-i="${i}"><span class="L" style="background:${OPT_COLORS[i]}">${LETTERS[i]}</span>${o}</button>`).join('')}</div>
+    ${multi ? '<div class="mute" style="text-align:center">Chạm để chọn nhiều đáp án, rồi bấm GỬI</div><button class="send" id="send" disabled>GỬI ĐÁP ÁN</button>' : ''}`);
+  const sel = new Set();
+  app.querySelectorAll('.opt').forEach(b => b.onclick = () => {
+    const i = +b.dataset.i;
+    if (!multi) return submit([i]);
+    sel.has(i) ? sel.delete(i) : sel.add(i); b.classList.toggle('sel'); $('send').disabled = !sel.size;
+  });
+  if (multi) $('send').onclick = () => submit([...sel].sort());
+  const L = Qd.limit * 1000;
+  const tick = () => {
+    const left = Math.max(0, game.qStartMs + L - net.now());
+    if ($('tb')) { $('tb').style.width = (left / L * 100) + '%'; $('tl').textContent = Math.ceil(left / 1000) + ' giây'; }
+    if (left <= 0) return screen(`<div class="center"><div class="res">⌛</div><div class="big">Hết giờ!</div><div class="mute">Chờ xem đáp án trên màn hình lớn nhé.</div></div>`);
+    timerRAF = requestAnimationFrame(tick);
+  };
+  if (game.qStartMs) tick();
+}
+
+async function submit(a) {
+  const q = game.q; store.set(`gdct-a-${g}-${uid}-${q}`, JSON.stringify(a));
+  if (navigator.vibrate) navigator.vibrate(30);
+  render();
+  try { await net.answer(g, q, a); }
+  catch (e) { screen(`<div class="center"><div class="res">⌛</div><div class="big">Không kịp rồi!</div><div class="mute">Đáp án gửi sau khi hết giờ nên không được tính.</div></div>`); }
+}
+
+function renderResult(end) {
+  const r = game.results?.[uid];
+  if (!r) return screen(`<div class="center"><div class="big">${end ? '🏁 Kết thúc!' : '👀 Xem đáp án trên màn hình lớn'}</div><div class="mute">Bạn vào lớp sau câu này, câu tiếp theo chơi cùng nhé!</div></div>`);
+  const [score, rank, last, streak, gained] = r, total = game.total || '';
+  if (end) return screen(`<div class="center"><div class="res">${rank <= 3 ? ['🥇', '🥈', '🥉'][rank - 1] : '🎉'}</div><div class="big">Hạng ${rank}${total ? ' / ' + total : ''}</div><div class="pts">${score} điểm</div><div class="mute">Cảm ơn bạn đã chơi!<br>Nhìn lên màn hình lớn xem bức tranh bí ẩn nhé 🧩</div></div>`);
+  if (navigator.vibrate) navigator.vibrate(last === 1 ? [40, 60, 40] : 120);
+  screen(`<div class="center">${last === 1 ? `<div class="res">✅</div><div class="big ok">Chính xác!</div><div class="pts">+${gained}</div>${streak >= 2 ? `<div class="big" style="font-size:22px">🔥 Chuỗi ${streak} câu đúng!</div>` : ''}`
+    : last === 0 ? `<div class="res">❌</div><div class="big bad">Chưa đúng rồi</div><div class="mute">Xem đáp án đúng trên màn hình lớn nhé.</div>`
+    : `<div class="res">⌛</div><div class="big">Bạn chưa trả lời câu này</div>`}
+    <div class="rank">Hạng hiện tại: <b>${rank}</b>${total ? ' / ' + total : ''} · ${score} điểm</div></div>`);
+}
+
+async function boot() {
+  if (!g) {
+    screen(`<div class="center"><div class="big">Nhập mã phòng</div><div class="mute">Mã 4 số hiện trên màn hình lớn</div><input id="code" inputmode="numeric" maxlength="4" autofocus><button class="send" id="go">VÀO LỚP</button></div>`);
+    await new Promise(res => $('go').onclick = () => { const v = $('code').value.trim(); if (/^\d{4}$/.test(v)) { g = v; history.replaceState(null, '', '?g=' + v + (DEMO ? '&demo=1' : '')); res(); } });
+    screen(`<div class="center"><div class="big">Đang vào lớp…</div></div>`);
+  }
+  net = await makeNet();
+  uid = await net.signInStudent();
+  const saved = store.get(`gdct-n-${g}-${uid}`); if (saved) myN = +saved;
+  await net.join(g);
+  let unRoster = net.onRoster(g, m => {
+    if (m[uid]) { myN = m[uid]; store.set(`gdct-n-${g}-${uid}`, myN); if (net.kind === 'firebase' && unRoster) { unRoster(); unRoster = null; } render(); }
+  });
+  net.onGame(g, d => {
+    const k = d ? [d.state, d.q, d.qStartMs ? 1 : 0, d.results && d.results[uid] ? d.results[uid].join() : '-'].join(':') : 'none';
+    game = d;
+    if (k !== lastKey) { lastKey = k; render(); }
+  });
+}
+boot().catch(e => err(e.message || e));
+</script>
+</body></html>

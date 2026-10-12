@@ -1,0 +1,37 @@
+rules_version = '2';
+// Luật bảo vệ dữ liệu trò chơi. Thay EMAIL_GIANG_VIEN bằng địa chỉ Gmail của giảng viên.
+service cloud.firestore {
+  match /databases/{db}/documents {
+    function isHost() {
+      return request.auth != null && request.auth.token.email == 'EMAIL_GIANG_VIEN'
+        && request.auth.token.email_verified == true;
+    }
+    match /games/{g} {
+      allow read: if true;                       // ai cũng xem được trạng thái ván (câu hỏi, kết quả)
+      allow write: if isHost();
+
+      match /pub/{d} {                           // bảng số thứ tự
+        allow read: if true;
+        allow write: if isHost();
+      }
+      match /players/{uid} {                     // sinh viên báo "em vào rồi"
+        allow read: if isHost() || (request.auth != null && request.auth.uid == uid);
+        allow create: if request.auth != null && request.auth.uid == uid
+          && request.resource.data.keys().hasOnly(['t']) && request.resource.data.t == request.time;
+        allow delete: if isHost();
+      }
+      match /answers/{id} {                      // mỗi sinh viên chỉ được nộp 1 lần mỗi câu, và chỉ trong giờ
+        allow read, delete: if isHost();
+        allow create: if request.auth != null
+          && id == string(request.resource.data.q) + '_' + request.auth.uid
+          && request.resource.data.keys().hasOnly(['q', 'a', 't'])
+          && request.resource.data.t == request.time
+          && request.resource.data.a is list && request.resource.data.a.size() <= 6
+          && get(/databases/$(db)/documents/games/$(g)).data.state == 'question'
+          && get(/databases/$(db)/documents/games/$(g)).data.q == request.resource.data.q
+          && request.time <= get(/databases/$(db)/documents/games/$(g)).data.qStart
+               + duration.value(get(/databases/$(db)/documents/games/$(g)).data.limit + 2, 's');
+      }
+    }
+  }
+}
