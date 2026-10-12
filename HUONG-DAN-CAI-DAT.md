@@ -19,14 +19,16 @@ Khi `config.js` còn trống, trò chơi tự chạy ở **chế độ thử**:
 3. Bấm **Bắt đầu** (hoặc phím Space), chơi hết 6 câu.
 
 ## Cài Firebase để chơi thật (khoảng 5 phút, làm 1 lần)
-1. Vào https://console.firebase.google.com, bấm **Create a project** (Tạo dự án), đặt tên ví dụ `on-bai-gdct`, tắt Google Analytics rồi bấm Create.
-2. Menu trái: **Build > Firestore Database > Create database**. Chọn vị trí **asia-southeast1 (Singapore)** cho nhanh, chế độ **production mode**.
-3. Ở thẻ **Rules** của Firestore: xoá hết, dán toàn bộ nội dung file `firestore.rules`, **thay `EMAIL_GIANG_VIEN` bằng Gmail của thầy/cô**, rồi bấm **Publish**.
-4. Menu trái: **Build > Authentication > Get started > Sign-in method**:
-   - Bật **Anonymous** (cho sinh viên, không cần tài khoản).
-   - Bật **Google** (cho giảng viên đăng nhập màn hình lớn).
-5. **Authentication > Settings > Authorized domains**: thêm tên miền nơi đặt trang (ví dụ `ten-cua-ban.github.io`).
-6. Bánh răng ⚙ **Project settings > General > Your apps**, bấm biểu tượng **Web `</>`**, đặt tên `tro-choi`, bấm Register. Sao chép 4 dòng `apiKey`, `authDomain`, `projectId`, `appId` dán vào `config.js` (hoặc gửi cho Claude dán giúp).
+> Giao diện Firebase Console thay đổi thường xuyên. Nếu không thấy mục nào trong menu, hãy gõ tên mục vào ô **🔍 Search for products** ở đầu menu bên trái.
+
+1. Vào https://console.firebase.google.com, tạo dự án mới (tắt Google Analytics).
+2. **Firestore:** tìm `Firestore` trong ô Search, bấm **Create database**, chọn vị trí **asia-southeast1 (Singapore)**, chế độ **production**.
+3. **Luật bảo vệ:** trong Firestore, mở thẻ **Rules**, dán toàn bộ nội dung file `firestore.rules`, thay `EMAIL_GIANG_VIEN` bằng Gmail giảng viên (dòng phải có dạng `request.auth.token.email == 'ten@gmail.com'`), rồi bấm **Publish**.
+4. **Đăng nhập:** gõ `Authentication` vào ô Search, bấm **Get started**, mở thẻ **Sign-in method**:
+   - bấm **Anonymous** rồi bật **Enable**, bấm Save;
+   - bấm **Add new provider**, chọn **Google**, bật **Enable**, chọn email hỗ trợ, bấm Save.
+5. **Tên miền được phép:** vẫn trong Authentication, mở thẻ **Settings**, chọn **Authorized domains**, bấm **Add domain**, gõ `meyko-z777.github.io`.
+6. **Lấy cấu hình:** bấm **⚙ Settings > Project settings** (menu trái), ở thẻ **General** kéo xuống **Your apps**, bấm biểu tượng **`</>`** (Web), đặt tên `tro-choi`, KHÔNG tích Firebase Hosting, bấm **Register app**. Sao chép 4 dòng `apiKey`, `authDomain`, `projectId`, `appId` gửi cho Claude.
    Đây là mã định danh công khai của dự án, không phải mật khẩu. Dữ liệu được bảo vệ bằng luật ở bước 3.
 
 ## Khi đứng lớp
