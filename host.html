@@ -428,7 +428,16 @@ function botsAnswer(qi) {
   }
 }
 
-function err(e) { console.error(e); $('err').textContent = '⚠ ' + (e?.message || e); setTimeout(() => $('err').textContent = '', 8000); }
+const VI_ERR = {
+  'auth/operation-not-allowed': 'Firebase chưa bật đăng nhập Google. Vào Firebase Console > Authentication > Sign-in method, bật Google.',
+  'auth/unauthorized-domain': 'Tên miền chưa được cho phép. Vào Authentication > Settings > Authorized domains, thêm meyko-z777.github.io.',
+  'auth/popup-blocked': 'Trình duyệt chặn cửa sổ đăng nhập. Cho phép cửa sổ bật lên (pop-up) cho trang này rồi bấm lại.',
+  'auth/popup-closed-by-user': 'Cửa sổ đăng nhập bị đóng. Bấm lại nút Đăng nhập Google.',
+  'auth/network-request-failed': 'Mất kết nối mạng. Kiểm tra wifi/4G rồi thử lại.',
+  'permission-denied': 'Tài khoản Google này không phải Gmail giảng viên đã ghi trong luật Firestore. Đăng xuất và đăng nhập đúng Gmail.',
+};
+const viErr = e => VI_ERR[e?.code] || (e?.message || String(e));
+function err(e) { console.error(e); $('err').textContent = '⚠ ' + viErr(e); setTimeout(() => $('err').textContent = '', 12000); }
 
 /* ---------- khởi động ---------- */
 async function boot() {
@@ -437,7 +446,7 @@ async function boot() {
   $('mode').textContent = DEMO ? 'CHẾ ĐỘ THỬ (1 máy)' : EMU ? 'GIẢ LẬP FIREBASE' : '● TRỰC TUYẾN';
   $('mode').classList.toggle('live', !DEMO);
   const user = await net.signInHost(false);
-  if (!user) { $('login').style.display = 'flex'; await new Promise(res => { $('loginBtn').onclick = async () => { try { await net.signInHost(true); $('login').style.display = 'none'; res(); } catch (e) { $('loginErr').textContent = 'Không đăng nhập được: ' + e.message; } }; }); }
+  if (!user) { $('login').style.display = 'flex'; await new Promise(res => { $('loginBtn').onclick = async () => { try { await net.signInHost(true); $('login').style.display = 'none'; res(); } catch (e) { $('loginErr').textContent = 'Không đăng nhập được: ' + viErr(e); } }; }); }
   const P = new URLSearchParams(location.search);
   g = P.get('g') || localStorage.getItem('gdct-host-g') || newCode();
   localStorage.setItem('gdct-host-g', g);
