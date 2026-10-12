@@ -38,6 +38,9 @@ main{flex:1;display:flex;flex-direction:column;padding:18px 16px 24px;gap:14px}
 .rank{background:#fff;border:2px solid var(--line);border-radius:18px;padding:12px 22px;font-weight:800;font-size:20px}
 input{font:inherit;font-size:34px;font-weight:900;text-align:center;letter-spacing:.3em;width:220px;padding:12px;border-radius:16px;border:3px solid var(--line)}
 .err{color:var(--no);font-weight:700}
+.card-pick{width:100%;max-width:420px;background:#fff;border:2px solid var(--line);border-radius:22px;padding:20px 18px;display:flex;flex-direction:column;gap:12px;align-items:center}
+.card-pick input{width:100%}
+input::placeholder{letter-spacing:.05em;color:#CDB9A6;font-weight:700}
 </style></head>
 <body>
 <header id="hd" style="display:none"><span id="hAv" class="av"></span><span class="id" id="hId"></span><span class="sp"></span><span class="sc" id="hSc"></span></header>
@@ -122,7 +125,13 @@ function renderResult(end) {
 
 async function boot() {
   if (!g) {
-    screen(`<div class="center"><div class="big">Nhập mã phòng</div><div class="mute">Mã 4 số hiện trên màn hình lớn</div><input id="code" inputmode="numeric" maxlength="4" autofocus><button class="send" id="go">VÀO LỚP</button></div>`);
+    screen(`<div class="center">
+      <div class="card-pick"><div class="big" style="font-size:24px">👩‍🏫 Thầy/cô giảng viên?</div>
+        <div class="mute">Đây là trang của sinh viên. Màn hình chiếu lên hội trường nằm ở nút dưới đây.</div>
+        <a class="send" href="host.html${DEMO && P.has('demo') ? '?demo=1' : ''}" style="text-decoration:none;display:block">MỞ MÀN HÌNH LỚN ▶</a></div>
+      <div class="card-pick"><div class="big" style="font-size:24px">🎒 Sinh viên</div>
+        <div class="mute">Cách nhanh nhất là <b>quét mã QR</b> trên màn hình lớn.<br>Quét lỗi thì nhập <b>mã phòng</b> (4 số ở góc trên bên phải màn hình lớn, không phải mật khẩu):</div>
+        <input id="code" inputmode="numeric" maxlength="4" placeholder="VD: 4821"><button class="send" id="go">VÀO LỚP</button></div></div>`);
     await new Promise(res => $('go').onclick = () => { const v = $('code').value.trim(); if (/^\d{4}$/.test(v)) { g = v; history.replaceState(null, '', '?g=' + v + (DEMO ? '&demo=1' : '')); res(); } });
     screen(`<div class="center"><div class="big">Đang vào lớp…</div></div>`);
   }
