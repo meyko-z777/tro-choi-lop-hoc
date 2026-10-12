@@ -51,7 +51,8 @@ import { avatar, pad, LETTERS, OPT_COLORS } from './shared.js';
 
 const $ = id => document.getElementById(id), app = $('app');
 const P = new URLSearchParams(location.search);
-let g = P.get('g'), net, uid, myN = null, game = null, lastKey = '', timerRAF = 0;
+let g = P.get('g'), net, uid, myN = null, game = null, lastKey = '', timerRAF = 0, joined = false;
+const seenAt = {};   // câu hỏi -> thời điểm điện thoại nhận được (tự đếm giờ, không phụ thuộc đồng hồ máy)
 
 function screen(html) { app.innerHTML = html; }
 function err(msg) { screen(`<div class="center"><div class="big">😵 Có lỗi kết nối</div><div class="mute">${msg}</div><button class="send" onclick="location.reload()">Thử lại</button></div>`); }
@@ -70,7 +71,7 @@ function render() {
   header();
   if (!game) return screen(`<div class="center"><div class="big">⏳ Phòng chưa mở</div><div class="mute">Thầy/cô sắp bắt đầu, giữ nguyên trang này nhé.</div></div>`);
   const s = game.state;
-  if (!myN && s === 'lobby') return screen(`<div class="center"><div class="big">Đang cấp số cho bạn…</div><div class="mute">Mỗi bạn một số và một linh vật riêng.</div></div>`);
+  if (!myN && s === 'lobby') return screen(`<div class="center"><div class="res">✅</div><div class="big">Đã vào lớp!</div><div class="mute">Số thứ tự và linh vật của bạn sẽ hiện ra trong giây lát.<br>Nhìn lên màn hình lớn, chờ thầy/cô bắt đầu nhé!</div></div>`);
   if (s === 'lobby') { const a = avatar(myN); return screen(`<div class="center"><div class="mute">Bạn là</div><div class="av me" style="background:${a.c}">${a.e}</div><div class="num">${pad(myN)}</div><div class="big" style="font-size:22px">Nhìn lên màn hình lớn 👀</div><div class="mute">Tìm linh vật của bạn trên màn hình.<br>Chờ thầy/cô bấm bắt đầu nhé!</div></div>`); }
   if (s === 'question') return renderQ();
   if (s === 'reveal' || s === 'end') return renderResult(s === 'end');
@@ -93,14 +94,14 @@ function renderQ() {
     sel.has(i) ? sel.delete(i) : sel.add(i); b.classList.toggle('sel'); $('send').disabled = !sel.size;
   });
   if (multi) $('send').onclick = () => submit([...sel].sort());
-  const L = Qd.limit * 1000;
+  const L = Qd.limit * 1000, t0 = seenAt[q] ??= performance.now();
   const tick = () => {
-    const left = Math.max(0, game.qStartMs + L - net.now());
+    const left = Math.max(0, t0 + L - performance.now());
     if ($('tb')) { $('tb').style.width = (left / L * 100) + '%'; $('tl').textContent = Math.ceil(left / 1000) + ' giây'; }
     if (left <= 0) return screen(`<div class="center"><div class="res">⌛</div><div class="big">Hết giờ!</div><div class="mute">Chờ xem đáp án trên màn hình lớn nhé.</div></div>`);
     timerRAF = requestAnimationFrame(tick);
   };
-  if (game.qStartMs) tick();
+  tick();
 }
 
 async function submit(a) {
@@ -115,10 +116,10 @@ function renderResult(end) {
   const r = game.results?.[uid];
   if (!r) return screen(`<div class="center"><div class="big">${end ? '🏁 Kết thúc!' : '👀 Xem đáp án trên màn hình lớn'}</div><div class="mute">Bạn vào lớp sau câu này, câu tiếp theo chơi cùng nhé!</div></div>`);
   const [score, rank, last, streak, gained] = r, total = game.total || '';
-  if (end) return screen(`<div class="center"><div class="res">${rank <= 3 ? ['🥇', '🥈', '🥉'][rank - 1] : '🎉'}</div><div class="big">Hạng ${rank}${total ? ' / ' + total : ''}</div><div class="pts">${score} điểm</div><div class="mute">Cảm ơn bạn đã chơi!<br>Nhìn lên màn hình lớn xem bức tranh bí ẩn nhé 🧩</div></div>`);
+  if (end) return screen(`<div class="center"><div class="res">${rank <= 3 ? ['🥇', '🥈', '🥉'][rank - 1] : '🎉'}</div><div class="big">Hạng ${rank}${total ? ' / ' + total : ''}</div><div class="pts">${score} điểm</div><div class="mute">Cảm ơn bạn đã chơi!<br>Nhìn lên màn hình lớn xem ô chữ bí ẩn nhé 🔠</div></div>`);
   if (navigator.vibrate) navigator.vibrate(last === 1 ? [40, 60, 40] : 120);
   screen(`<div class="center">${last === 1 ? `<div class="res">✅</div><div class="big ok">Chính xác!</div><div class="pts">+${gained}</div>${streak >= 2 ? `<div class="big" style="font-size:22px">🔥 Chuỗi ${streak} câu đúng!</div>` : ''}`
-    : last === 0 ? `<div class="res">❌</div><div class="big bad">Chưa đúng rồi</div><div class="mute">Xem đáp án đúng trên màn hình lớn nhé.</div>`
+    : last === 0 ? `<div class="res">❌</div><div class="big bad">Chưa đúng rồi</div><div class="pts">+${gained}</div><div class="mute">Vẫn có điểm tham gia! Xem đáp án đúng trên màn hình lớn nhé.</div>`
     : `<div class="res">⌛</div><div class="big">Bạn chưa trả lời câu này</div>`}
     <div class="rank">Hạng hiện tại: <b>${rank}</b>${total ? ' / ' + total : ''} · ${score} điểm</div></div>`);
 }
@@ -138,12 +139,13 @@ async function boot() {
   net = await makeNet();
   uid = await net.signInStudent();
   const saved = store.get(`gdct-n-${g}-${uid}`); if (saved) myN = +saved;
-  await net.join(g);
+  net.join(g).then(() => { joined = true; }).catch(() => {});   // chạy ngầm, không bắt chờ
   let unRoster = net.onRoster(g, m => {
     if (m[uid]) { myN = m[uid]; store.set(`gdct-n-${g}-${uid}`, myN); if (net.kind === 'firebase' && unRoster) { unRoster(); unRoster = null; } render(); }
   });
   net.onGame(g, d => {
-    const k = d ? [d.state, d.q, d.qStartMs ? 1 : 0, d.results && d.results[uid] ? d.results[uid].join() : '-'].join(':') : 'none';
+    if (d && d.state === 'question' && seenAt[d.q] === undefined) seenAt[d.q] = performance.now();
+    const k = d ? [d.state, d.q, d.results && d.results[uid] ? d.results[uid].join() : '-'].join(':') : 'none';
     game = d;
     if (k !== lastKey) { lastKey = k; render(); }
   });

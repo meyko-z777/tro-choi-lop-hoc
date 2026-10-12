@@ -1,6 +1,6 @@
 # 🎮 Trò chơi lớp học - Ôn bài cũ
 
-Sinh viên quét mã QR là chơi, không cần tài khoản. Màn hình hội trường hiện bảng vàng nhảy hạng trực tiếp và "Mảnh ghép bí ẩn".
+Sinh viên quét mã QR là chơi, không cần tài khoản. Màn hình hội trường hiện bảng vàng nhảy hạng trực tiếp và "Ô chữ bí ẩn" GIÁO DỤC CHÍNH TRỊ.
 
 ## 🔗 Các đường link (sau khi bật GitHub Pages)
 

@@ -42,13 +42,16 @@ body{font-family:'Be Vietnam Pro',Inter,'Segoe UI',Roboto,Arial,sans-serif;color
 #tease .txt b{color:var(--red)}
 #startBtn{position:absolute;right:60px;bottom:60px;font-size:44px;padding:28px 60px}
 #demoBar{position:absolute;right:60px;top:110px;display:flex;gap:10px;align-items:center;font-weight:800;color:var(--gold);font-size:20px}
-/* ---- mảnh ghép ---- */
-.puz{position:relative;border-radius:22px;overflow:hidden;border:5px solid var(--mar);background:#6E0A10;flex:none}
-.puz img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.puz .grid{position:absolute;inset:0;display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(3,1fr);gap:3px;perspective:900px}
-.tile{background:linear-gradient(145deg,#8E1118,#5E0910);display:flex;align-items:center;justify-content:center;color:#FFCD00;font-weight:900;transition:transform .7s cubic-bezier(.5,0,.3,1.4),opacity .7s;border:2px solid rgba(255,205,0,.25)}
-.tile.open{transform:rotateY(180deg) scale(.6);opacity:0}
-.tile.flash{animation:tflash .9s}
+/* ---- ô chữ ---- */
+.puz{--s:28px;position:relative;border-radius:18px;background:linear-gradient(145deg,#8E1118,#5E0910);border:4px solid var(--yel);flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:calc(var(--s)*.22);padding:calc(var(--s)*.45)}
+.puz .ln{display:flex;gap:calc(var(--s)*.12)}
+.puz .sp{width:calc(var(--s)*.45)}
+.lt{position:relative;width:var(--s);height:calc(var(--s)*1.18);perspective:600px}
+.lt span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;border-radius:calc(var(--s)*.16);font-weight:900;backface-visibility:hidden;transition:transform .7s cubic-bezier(.5,0,.3,1.4)}
+.lt .f{background:#B3141B;color:rgba(255,205,0,.75);border:2px solid rgba(255,205,0,.35);font-size:calc(var(--s)*.55)}
+.lt .b{background:#FFF3C4;color:var(--mar);font-size:calc(var(--s)*.78);transform:rotateY(180deg);box-shadow:0 0 calc(var(--s)*.3) rgba(255,205,0,.7)}
+.lt.open .f{transform:rotateY(-180deg)}.lt.open .b{transform:rotateY(0)}
+.lt.flash .f{animation:tflash .9s}
 @keyframes tflash{0%{filter:brightness(1)}40%{filter:brightness(2.2)}100%{filter:brightness(1)}}
 /* ---- câu hỏi ---- */
 #qhead{position:absolute;left:60px;top:120px;width:1160px;display:flex;align-items:center;gap:18px}
@@ -91,15 +94,15 @@ body{font-family:'Be Vietnam Pro',Inter,'Segoe UI',Roboto,Arial,sans-serif;color
 .row.r1 .rk{color:var(--gold)}
 .row.jump{animation:jump .9s}
 @keyframes jump{0%{box-shadow:0 0 0 0 rgba(255,205,0,.9)}50%{box-shadow:0 0 0 14px rgba(255,205,0,0)}}
-#side .puz{width:290px;height:218px}
+#side .puz{--s:27px}
 #puzRow{display:flex;gap:20px;align-items:center;margin-top:10px}
 #puzRow .txt{font-size:22px;font-weight:800;line-height:1.4;color:var(--mar)}
 .rv #board{height:315px}
-.rv #side .puz{width:500px;height:375px;align-self:center}
+.rv #side .puz{--s:50px;align-self:center}
 .rv #puzRow{flex-direction:column;align-items:stretch;margin-top:0}
 #top1{position:absolute;left:1270px;top:96px;font-size:24px;font-weight:900;color:var(--gold);opacity:0;transition:opacity .3s}
 /* ---- tổng kết ---- */
-#final .puz{position:absolute;left:60px;top:150px;width:1040px;height:780px}
+#final .puz{--s:98px;position:absolute;left:60px;top:200px;width:1040px;height:640px}
 #finalCap{position:absolute;left:60px;top:950px;width:1040px;text-align:center;font-size:36px;font-weight:900;color:var(--mar)}
 #podium{position:absolute;left:1160px;top:130px;width:700px;display:flex;align-items:flex-end;justify-content:center;gap:18px;height:470px}
 .pod{display:flex;flex-direction:column;align-items:center;gap:10px;font-weight:900}
@@ -124,8 +127,8 @@ body{font-family:'Be Vietnam Pro',Inter,'Segoe UI',Roboto,Arial,sans-serif;color
     <div class="card" id="qrCard"><canvas id="qr" width="550" height="550"></canvas><div id="joinUrl"></div><div id="tip">Quét bằng Camera hoặc Zalo · nên dùng 4G cho nhanh</div></div>
     <div id="count"><b id="nJoin">0</b><span>bạn đã vào lớp</span></div>
     <div id="wall"></div>
-    <div id="tease"><div class="puz" id="puzL" style="width:280px;height:210px"></div>
-      <div class="txt">🧩 <b>MẢNH GHÉP BÍ ẨN</b><br>Câu nào <b>từ 60%</b> cả lớp đúng → lật <b>2 mảnh</b><br>Từ 30% → lật 1 mảnh. Cả lớp cùng mở bức tranh!</div></div>
+    <div id="tease"><div class="puz" id="puzL" style="--s:26px"></div>
+      <div class="txt">🔠 <b>Ô CHỮ BÍ ẨN</b><br>Mỗi câu lật <b>2 chữ</b>. Câu nào <b>từ 60%</b> cả lớp đúng → lật <b>3 chữ</b>.<br>Cả lớp cùng giải ô chữ!</div></div>
     <div id="demoBar"></div>
     <button class="btn" id="startBtn">Bắt đầu ▶</button>
   </section>
@@ -155,13 +158,12 @@ body{font-family:'Be Vietnam Pro',Inter,'Segoe UI',Roboto,Arial,sans-serif;color
 
 <script type="module">
 import { makeNet, DEMO, EMU } from './net.js';
-import { avatar, pad, TOTAL_TILES, GRACE_MS, tilesFor, points, sameSet, LETTERS, OPT_COLORS } from './shared.js';
+import { avatar, pad, WORD, TOTAL_TILES, GRACE_MS, tilesFor, points, sameSet, LETTERS, OPT_COLORS } from './shared.js';
 import { QUESTIONS, TITLE, decodeKey } from './cauhoi.js';
 
 const $ = id => document.getElementById(id);
 const KEYS = QUESTIONS.map(q => decodeKey(q.k)), NQ = QUESTIONS.length;
 const TYPE_LABEL = { mc: 'Chọn 1 đáp án đúng', tf: 'Đúng hay Sai?', multi: 'Chọn TẤT CẢ đáp án đúng' };
-const IMG = 'hinh-ghep.svg';
 
 /* ---------- co giãn sân khấu 1920x1080 theo cửa sổ ---------- */
 function fit() { const s = Math.min(innerWidth / 1920, innerHeight / 1080); $('stage').style.transform = `scale(${s}) translate(-50%,-50%)`; }
@@ -184,22 +186,22 @@ const SFX = {
 };
 addEventListener('pointerdown', () => { if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)(); }, { once: true });
 
-/* ---------- mảnh ghép ---------- */
-const ORDER = [5, 2, 9, 0, 7, 10, 3, 6, 11, 1, 8, 4];      // thứ tự lật cố định
-function buildPuz(el, big) {
-  el.innerHTML = `<img src="${IMG}" alt=""><div class="grid">${Array.from({ length: TOTAL_TILES }, (_, i) => `<div class="tile" style="font-size:${big ? 90 : 34}px">?</div>`).join('')}</div>`;
+/* ---------- ô chữ ---------- */
+const ORDER = (() => { const o = [...Array(TOTAL_TILES).keys()]; let x = 7; for (let i = o.length - 1; i > 0; i--) { x = (x * 9301 + 49297) % 233280; const j = x % (i + 1); [o[i], o[j]] = [o[j], o[i]]; } return o; })();   // thứ tự lật cố định
+function buildPuz(el) {
+  let k = 0;
+  el.innerHTML = WORD.split(' ').map(w => `<div class="ln">${[...w].map(c => `<div class="lt" data-i="${k++}"><span class="f">?</span><span class="b">${c}</span></div>`).join('')}</div>`).join('');
 }
 function setTiles(el, n, animateFrom = n) {
-  const tiles = el.querySelectorAll('.tile');
+  const tiles = el.querySelectorAll('.lt');
   ORDER.forEach((idx, k) => {
     const t = tiles[idx]; if (!t) return;
     if (k < Math.min(animateFrom, n)) t.classList.add('open');
-    else if (k < n) setTimeout(() => { t.classList.add('flash'); setTimeout(() => { t.classList.add('open'); SFX.tile(); }, 500); }, (k - animateFrom) * 700);
+    else if (k < n) setTimeout(() => { t.classList.add('flash'); setTimeout(() => { t.classList.add('open'); SFX.tile(); }, 450); }, (k - animateFrom) * 650);
     else t.classList.remove('open');
   });
 }
-['puzL', 'puzS'].forEach(id => buildPuz($(id), false)); buildPuz($('puzF'), true);
-$('puzL').querySelectorAll('.tile').forEach(t => t.style.fontSize = '26px');
+['puzL', 'puzS', 'puzF'].forEach(id => buildPuz($(id)));
 
 /* ---------- trạng thái ---------- */
 let net, g, game = null, hostOffset = 0, sentAt = 0;
@@ -230,13 +232,13 @@ function compute() {
         const right = sameSet(an.a, KEYS[qi]); const el = Math.max(0, an.t - st);
         if (qi === cur) { nAns++; an.a.forEach(i => counts[i]++); }
         if (right) { p.streak++; const pt = points(true, el, L, p.streak); p.score += pt; p.time += el; if (qi === cur) { p.gained = pt; p.last = 1; nRight++; } }
-        else { p.streak = 0; }
+        else { p.streak = 0; const pt = points(false, el, L, 0); p.score += pt; if (qi === cur) p.gained = pt; }
       } else if (!(live && qi === cur)) p.streak = 0;
     }
   }
   const list = [...S.values()].sort((a, b) => b.score - a.score || a.time - b.time || a.n - b.n);
   list.forEach((p, i) => p.rank = i + 1);
-  return { list, counts, nAns, nRight, total: S.size };
+  return { list, counts, nAns, nRight, total: S.size, q: cur };
 }
 
 /* ---------- vẽ ---------- */
@@ -301,7 +303,7 @@ function renderReveal(c) {
     d.querySelector('.bar').style.width = pct + '%'; d.querySelector('.n').textContent = c.counts[i] + (key.includes(i) ? ' ✓' : '');
   });
   const rate = c.total ? c.nRight / c.total : 0, add = game.reveal?.add ?? 0;
-  $('banner').innerHTML = `✅ ${Math.round(rate * 100)}% cả lớp trả lời đúng ${add ? `→ lật <span style="color:#D7261E">${add} mảnh ghép!</span>` : '→ chưa lật được mảnh nào 😅'}`;
+  $('banner').innerHTML = `✅ ${Math.round(rate * 100)}% cả lớp trả lời đúng → lật <span style="color:#D7261E">${add} chữ!</span>`;
   $('nextBtn').textContent = qi < NQ - 1 ? 'Câu tiếp ▶' : 'Tổng kết 🏁';
 }
 
@@ -316,7 +318,7 @@ function loop() {
     $('tArc').style.strokeDashoffset = 326.7 * (1 - left / (L * 1000));
     $('tArc').style.stroke = left < 5000 ? '#E04A3A' : '#D7261E';
     if (s !== lastTick && s <= 5 && s > 0) { lastTick = s; SFX.tick(); }
-    const everyone = stats && stats.total > 0 && stats.nAns >= stats.total;
+    const everyone = stats && stats.q === game.q && stats.total > 0 && stats.nAns >= stats.total && now() - game.qStartMs > 3000;
     if (left <= 0 && now() > game.qStartMs + L * 1000 + 900) doReveal();
     else if (everyone && !allAnsweredAt) allAnsweredAt = Date.now();
     if (allAnsweredAt && Date.now() - allAnsweredAt > 1200) doReveal();
@@ -335,7 +337,7 @@ function refresh() {
     renderBoard(stats.list, 10);
   }
   if (game.state === 'reveal') { renderBoard(stats.list, 5); }
-  $('puzTxt').innerHTML = `🧩 Đã mở <b>${game.tiles || 0}/${TOTAL_TILES}</b> mảnh`;
+  $('puzTxt').innerHTML = `🔠 Đã lật <b>${game.tiles || 0}/${TOTAL_TILES}</b> chữ`;
 }
 
 /* ---------- điều khiển ván chơi ---------- */
@@ -381,7 +383,7 @@ function onGame(d, pending) {
   const key = d.state + ':' + d.q;
   if (key !== lastState + ':' + lastQ) {
     if (d.state === 'lobby') show('lobby');
-    if (d.state === 'question') { show('play'); renderQuestion(false); setTiles($('puzS'), d.tiles || 0); revealedTilesShown = d.tiles || 0; prevTop = null; if (DEMO) botsAnswer(d.q); }
+    if (d.state === 'question') { allAnsweredAt = 0; lastTick = -1; stats = compute(); show('play'); renderQuestion(false); setTiles($('puzS'), d.tiles || 0); revealedTilesShown = d.tiles || 0; prevTop = null; if (DEMO) botsAnswer(d.q); }
     if (d.state === 'reveal') { show('play'); renderQuestion(true); stats = compute(); renderReveal(stats); renderBoard(stats.list, 5); SFX.reveal(); setTiles($('puzS'), d.tiles || 0, revealedTilesShown); revealedTilesShown = d.tiles || 0; }
     if (d.state === 'end') showFinal();
     lastState = d.state; lastQ = d.q;
@@ -391,7 +393,7 @@ function onGame(d, pending) {
 function showFinal() {
   show('final'); const c = compute(), opened = game.tiles || 0;
   setTiles($('puzF'), 0); setTimeout(() => setTiles($('puzF'), TOTAL_TILES, 0), 600);
-  $('finalCap').innerHTML = `Cả lớp tự mở được <span style="color:#D7261E">${opened}/${TOTAL_TILES}</span> mảnh · Đây là <b>V. I. Lênin</b> và <b>Chủ nghĩa duy vật biện chứng</b>!`;
+  $('finalCap').innerHTML = `Cả lớp tự lật được <span style="color:#D7261E">${opened}/${TOTAL_TILES}</span> chữ · Ô chữ hôm nay: <b>${WORD}</b>!`;
   const top = c.list.slice(0, 3), H = [300, 220, 160], col = ['#D9A400', '#8C99A6', '#B87333'], ord = [1, 0, 2];
   $('podium').innerHTML = ord.filter(i => top[i]).map(i => `<div class="pod" style="animation-delay:${(2 - i) * .5}s">${avHTML(top[i].n, 120)}<div class="id">${pad(top[i].n)}</div><div class="bl" style="height:${H[i]}px;background:${col[i]}">${i + 1}<small>${top[i].score} điểm</small></div></div>`).join('');
   $('rest').innerHTML = c.list.slice(3, 11).map(p => `<div class="row"><span class="rk">${p.rank}</span>${avHTML(p.n, 44)}<span class="id">${pad(p.n)}</span><span class="sc">${p.score}</span></div>`).join('');

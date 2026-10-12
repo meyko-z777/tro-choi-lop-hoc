@@ -16,7 +16,7 @@ class FirebaseNet {
     const cfg = EMU ? { apiKey: 'demo-key', authDomain: 'localhost', projectId: 'demo-gdct', appId: 'demo' } : firebaseConfig;
     n.app = A.initializeApp(cfg);
     n.auth = U.getAuth(n.app);
-    n.db = F.initializeFirestore(n.app, { experimentalAutoDetectLongPolling: true });
+    n.db = F.initializeFirestore(n.app, Q.has('ws') ? { experimentalAutoDetectLongPolling: true } : { experimentalForceLongPolling: true });
     if (EMU) { U.connectAuthEmulator(n.auth, 'http://127.0.0.1:9099', { disableWarnings: true }); F.connectFirestoreEmulator(n.db, '127.0.0.1', 8080); }
     n.offset = 0;
     return n;
@@ -29,7 +29,6 @@ class FirebaseNet {
   async join(g) {
     const { F } = this, ref = F.doc(this.db, 'games', g, 'players', this.uid);
     try { await F.setDoc(ref, { t: F.serverTimestamp() }); } catch (e) { /* đã vào trước đó (tải lại trang) */ }
-    try { const s = await F.getDoc(ref); if (s.exists()) this.offset = s.data().t.toMillis() - Date.now(); } catch (e) {}
   }
   now() { return Date.now() + this.offset; }
   onGame(g, cb, meta = false) { return this.F.onSnapshot(this.G(g), { includeMetadataChanges: meta }, s => cb(s.exists() ? norm(s.data({ serverTimestamps: 'estimate' })) : null, s.metadata.hasPendingWrites)); }

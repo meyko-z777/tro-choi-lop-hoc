@@ -1,6 +1,6 @@
 # Trò chơi "Ôn bài cũ" - quét QR là chơi
 
-Sinh viên quét mã QR (camera hoặc Zalo), không cần tài khoản, được cấp số 001, 002... kèm linh vật. Màn hình hội trường hiện bảng vàng nhảy hạng trực tiếp và "Mảnh ghép bí ẩn" (chân dung V. I. Lênin + khung chữ Chủ nghĩa duy vật biện chứng).
+Sinh viên quét mã QR (camera hoặc Zalo), không cần tài khoản, được cấp số 001, 002... kèm linh vật. Màn hình hội trường hiện bảng vàng nhảy hạng trực tiếp và "Ô chữ bí ẩn" GIÁO DỤC CHÍNH TRỊ.
 
 | File | Dùng để |
 |---|---|
@@ -9,7 +9,6 @@ Sinh viên quét mã QR (camera hoặc Zalo), không cần tài khoản, đượ
 | `cauhoi.js` | Bộ 6 câu hỏi |
 | `config.js` | Cấu hình Firebase (dán vào đây) |
 | `firestore.rules` | Luật bảo vệ dữ liệu, dán vào Firebase Console |
-| `hinh-ghep.svg` | Bức tranh mảnh ghép |
 | `kiem-thu/sinh-vien-ao.mjs` | Kịch bản kiểm thử tải 377 sinh viên ảo |
 
 ## Chạy thử ngay trên 1 máy (chưa cần Firebase)
@@ -41,9 +40,10 @@ Khi `config.js` còn trống, trò chơi tự chạy ở **chế độ thử**:
 Lỡ tải lại trang màn hình lớn giữa chừng: điểm và số thứ tự không mất, vì đều được tính lại từ dữ liệu trên Firebase.
 
 ## Luật chơi
-- Đúng được 500 điểm, cộng thêm tối đa 500 điểm theo tốc độ. Từ câu đúng thứ 3 liên tiếp được thưởng thêm 100 (🔥).
-- Câu chọn nhiều đáp án phải chọn đủ và đúng hết mới được tính.
-- **Mảnh ghép:** câu nào từ 60% cả lớp trả lời đúng thì lật 2 mảnh, từ 30% thì lật 1 mảnh. Tranh có 12 mảnh.
+- Từ câu đúng thứ 3 liên tiếp được thưởng thêm 100 (🔥).
+- **Ô chữ bí ẩn:** GIÁO DỤC CHÍNH TRỊ (15 chữ cái). Mỗi câu lật 2 chữ, câu nào từ 60% cả lớp đúng thì lật 3 chữ. Hết ván lật toàn bộ. Đổi ô chữ: sửa dòng `WORD` trong `shared.js` (ví dụ `'CAO ĐẲNG TÂY ĐÔ'`).
+- **Ai cũng có điểm:** trả lời sai vẫn được 100 điểm tham gia; trả lời đúng 500-1000 điểm, càng nhanh càng cao.
+- **Bắt đầu lúc nào cũng được:** không cần đủ người, ai vào muộn vẫn chơi các câu còn lại.
 - Mỗi máy chỉ nộp được 1 lần mỗi câu và chỉ trong thời gian cho phép. Luật bảo vệ trên máy chủ chặn mọi lần nộp lại hay nộp muộn.
 
 ## Đổi câu hỏi
